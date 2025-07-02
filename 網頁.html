@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>顏文字情緒小工具</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .btn-group {
+      margin: 20px 0;
+    }
+
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
+      border: none;
+      background: #4CAF50;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #emoji-display {
+      margin-top: 30px;
+      font-size: 2rem;
+      padding: 15px;
+      background: #fff;
+      display: inline-block;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    #copy-btn {
+      margin-top: 15px;
+      padding: 8px 12px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #copy-btn:hover {
+      background-color: #0b7dda;
+    }
+  </style>
+</head>
+<body>
+  <h1>顏文字情緒小工具 (╯✧▽✧)╯</h1>
+
+  <div class="btn-group">
+    <button onclick="showFace('快樂')">快樂</button>
+    <button onclick="showFace('難過')">難過</button>
+    <button onclick="showFace('生氣')">生氣</button>
+    <button onclick="showFace('害羞')">害羞</button>
+    <button onclick="showFace('無奈')">無奈</button>
+    <button onclick="showFace('疲憊')">疲憊</button>
+    <button onclick="showFace('驚訝')">驚訝</button>
+    <button onclick="showFace('可愛')">可愛</button>
+    <button onclick="showFace('思考')">思考</button>
+    <button onclick="showFace('中二')">中二</button>
+  </div>
+
+  <div id="emoji-display">點選情緒按鈕來看顏文字！</div>
+  <br>
+  <button id="copy-btn" onclick="copyToClipboard()">複製顏文字</button>
+
+  <script>
+    const data = {
+      "快樂": [
+        "(＾▽＾)", "ヽ(・∀・)ﾉ", "(*≧ω≦)", "(o^▽^o)", "(*´∀｀*)",
+        "(⌒▽⌒)☆", "Ｏ(≧▽≦)Ｏ", "☆*:.｡.o(≧▽≦)o.｡.:*☆", "(づ｡◕‿‿◕｡)づ"
+      ],
+      "難過": [
+        "(T_T)", "(;_;)", "(；ω；)", "(ಥ﹏ಥ)", "(;﹏;)", "(ノД`)・゜・。", 
+        "o(╥﹏╥)o", "(｡•́︿•̀｡)", "(っ- ‸ – ς)"
+      ],
+      "生氣": [
+        "(╬ಠ益ಠ)", "(ノಠ益ಠ)ノ彡┻━┻", "(ಠ_ಠ)", "＼(｀0´)／", "(,,#ﾟДﾟ)", 
+        "ヽ(#`Д´)ﾉ", "(｀Д´*)", "(╬ﾟ◥益◤ﾟ)"
+      ],
+      "害羞": [
+        "(⁄ ⁄•⁄ω⁄•⁄ ⁄)", "(*´ｪ｀*)", "(〃▽〃)", "(｡･ω･｡)ﾉ♡", "(*ﾉωﾉ)",
+        "(≧◡≦)", "(つω`*)", "(｡♥‿♥｡)"
+      ],
+      "無奈": [
+        "(－_－;)", "(¬_¬)", "(・_・;)", "(￣ー￣)", "(・_・)",
+        "(ーー;)", "(・ω・)", "(´-ω-`)"
+      ],
+      "疲憊": [
+        "(－_－) zzZ", "(￣□￣;)!!", "(∪｡∪)｡｡｡zzz", "(｡-_-｡)",
+        "(=_=)", "(；￣Д￣)", "(｡´-д-)"
+      ],
+      "驚訝": [
+        "(ﾟДﾟ;)", "Σ(ﾟДﾟ)", "∑(O_O;)", "((((；゜Д゜)))", 
+        "(＠_＠;)", "(⊙_☉)", "(゜ロ゜)", "ヽ(ﾟ〇ﾟ)ﾉ"
+      ],
+      "可愛": [
+        "(=^-ω-^=)", "(≡^∇^≡)", "(=^･ω･^=)", "(U｡･ｪ･｡U)", "(･ω<)☆",
+        "ฅ^•ﻌ•^ฅ", "(°ㅂ°╬)"
+      ],
+      "思考": [
+        "(¬‿¬)", "( ಠ ͜ʖಠ)", "(；一_一)", "(ಠ‿ಠ)", "(´･_･`)",
+        "(ʘ‿ʘ)", "(눈_눈)"
+      ],
+      "中二": [
+        "(ノಠ益ಠ)ノ彡┻━┻", "(╯°□°）╯︵ ┻━┻", "ヽ༼ ಠ益ಠ ༽ﾉ", 
+        "ヽ(｀⌒´メ)ノ", "⤜(ʘ_ʘ)⤏", "ᕦ(ò_óˇ)ᕤ", "ψ(｀∇´)ψ"
+      ]
+    };
+
+    function showFace(category) {
+      const faces = data[category];
+      const randomFace = faces[Math.floor(Math.random() * faces.length)];
+      document.getElementById("emoji-display").innerText = randomFace;
+    }
+
+    function copyToClipboard() {
+      const text = document.getElementById("emoji-display").innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("已複製到剪貼簿！\n" + text);
+      });
+    }
+  </script>
+</body>
+</html>
