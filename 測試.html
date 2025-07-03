@@ -3,75 +3,494 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Emoji 表情推薦工具</title>
+  <title>✨ Emoji 魔法探索器</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: "Segoe UI", sans-serif;
-      background: #fefefe;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       padding: 20px;
-      text-align: center;
-    }
-    h1 {
       color: #333;
+      position: relative;
+      overflow-x: hidden;
     }
-    #search {
-      padding: 10px;
-      width: 60%;
-      font-size: 16px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+
+    /* 背景動畫粒子 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+      animation: float 6s ease-in-out infinite;
+      pointer-events: none;
     }
-    button {
-      padding: 10px 20px;
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 25px;
+      padding: 50px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+      animation: slideUp 0.8s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+      background-size: 400% 100%;
+      animation: gradientShift 3s ease infinite;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(50px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .title {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 15px;
+      letter-spacing: -1px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.2rem;
+      font-weight: 400;
+      margin-bottom: 35px;
+      opacity: 0.8;
+    }
+
+    .search-section {
+      margin-bottom: 40px;
+    }
+
+    .search-container {
+      position: relative;
+      margin-bottom: 25px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 18px 60px 18px 25px;
+      font-size: 18px;
+      border: 3px solid #e0e0e0;
+      border-radius: 20px;
+      outline: none;
+      transition: all 0.4s ease;
+      background: #fff;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 10px 30px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 24px;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .controls {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 15px 30px;
       font-size: 16px;
       border: none;
-      border-radius: 5px;
+      border-radius: 30px;
       cursor: pointer;
-      margin: 5px;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+      min-width: 150px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.6s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
       color: white;
     }
-    #random-btn { background: #FF9800; }
-    #copy-btn { background: #2196F3; }
-    #emoji-display {
-      margin-top: 20px;
+
+    .btn-secondary {
+      background: linear-gradient(45deg, #00d2d3, #54a0ff);
+      color: white;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .emoji-display {
+      text-align: center;
+      margin: 50px 0;
+      padding: 60px;
+      background: linear-gradient(135deg, #fff 0%, #f8f9ff 100%);
+      border-radius: 25px;
+      box-shadow: inset 0 5px 20px rgba(0, 0, 0, 0.05);
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .emoji-display::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+      animation: rotate 15s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .emoji-text {
+      font-size: 5rem;
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s ease;
+    }
+
+    .emoji-text.bounce {
+      animation: bounceIn 0.6s ease-out;
+    }
+
+    @keyframes bounceIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.05); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .section {
+      margin-top: 50px;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 25px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .recent-container {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      min-height: 60px;
+      align-items: center;
+    }
+
+    .recent-item {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 20px;
       font-size: 2rem;
-      padding: 20px;
-      background: #fff;
-      display: inline-block;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      min-width: 200px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
     }
-    #recent {
+
+    .recent-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .recent-item:hover::before {
+      left: 100%;
+    }
+
+    .recent-item:hover {
+      transform: scale(1.1) translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .empty-state {
+      color: #999;
+      font-style: italic;
+      font-size: 1.1rem;
+    }
+
+    .keywords-section {
+      margin-top: 40px;
+    }
+
+    .keywords-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
       margin-top: 20px;
-      font-size: 1.2rem;
     }
-    #recent span {
-      margin: 0 8px;
-      display: inline-block;
+
+    .keyword-tag {
+      background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+      padding: 12px 20px;
+      border-radius: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      color: #333;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
     }
-    @media (max-width: 600px) {
-      #search { width: 90%; }
-      #emoji-display { font-size: 1.5rem; }
+
+    .keyword-tag:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .copy-feedback {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(45deg, #10ac84, #01a3a4);
+      color: white;
+      padding: 15px 30px;
+      border-radius: 25px;
+      font-weight: 600;
+      font-size: 16px;
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.4s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .copy-feedback.show {
+      opacity: 1;
+      animation: slideDown 0.4s ease-out;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateX(-50%) translateY(-30px); }
+      to { transform: translateX(-50%) translateY(0); }
+    }
+
+    .error-message {
+      color: #e74c3c;
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 30px 20px;
+        margin: 10px;
+        border-radius: 20px;
+      }
+
+      .title {
+        font-size: 2.2rem;
+      }
+
+      .search-input {
+        padding: 15px 50px 15px 20px;
+        font-size: 16px;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .btn {
+        width: 100%;
+        max-width: 300px;
+      }
+
+      .emoji-text {
+        font-size: 4rem;
+      }
+
+      .emoji-display {
+        padding: 40px 20px;
+      }
+
+      .keywords-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 10px;
+      }
+
+      .recent-item {
+        font-size: 1.5rem;
+        padding: 10px 15px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Emoji 表情推薦工具</h1>
-  <input type="text" id="search" placeholder="輸入關鍵字搜尋 emoji..." onkeydown="if(event.key==='Enter') fetchEmoji()"/>
-  <br />
-  <button id="random-btn" onclick="showRandom()">隨機推薦</button>
-  <button id="copy-btn" onclick="copyToClipboard()">複製表情</button>
+  <div class="copy-feedback" id="copyFeedback">
+    <span id="copyText">✨ 已複製到剪貼簿！</span>
+  </div>
+  
+  <div class="container">
+    <div class="header">
+      <h1 class="title">✨ Emoji 魔法探索器</h1>
+      <p class="subtitle">探索無限可能的表情世界，讓對話更加生動有趣</p>
+    </div>
 
-  <div id="emoji-display">請輸入關鍵字或點擊隨機推薦！</div>
+    <div class="search-section">
+      <div class="search-container">
+        <input type="text" class="search-input" id="search" placeholder="輸入關鍵字探索 Emoji 世界..." />
+        <div class="search-icon">🔍</div>
+      </div>
+      
+      <div class="controls">
+        <button class="btn btn-primary" id="randomBtn" onclick="showRandom()">
+          🎲 隨機探索
+        </button>
+        <button class="btn btn-secondary" id="searchBtn" onclick="fetchEmoji()">
+          🚀 開始搜尋
+        </button>
+        <button class="btn btn-secondary" onclick="copyToClipboard()">
+          📋 複製表情
+        </button>
+      </div>
+    </div>
 
-  <div id="recent"><strong>最近使用：</strong> <span id="recent-list">(尚無)</span></div>
+    <div class="emoji-display">
+      <div class="emoji-text" id="emojiText">準備好探索 Emoji 的魔法世界了嗎？🌟</div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">
+        ⏰ 最近發現的寶藏
+      </h2>
+      <div class="recent-container" id="recentContainer">
+        <div class="empty-state">還沒有探索過任何 Emoji 呢～</div>
+      </div>
+    </div>
+
+    <div class="keywords-section">
+      <h2 class="section-title">
+        🎯 熱門關鍵字
+      </h2>
+      <div class="keywords-grid" id="keywordsGrid"></div>
+    </div>
+  </div>
 
   <script>
     const apiKey = "857cbe3e777e160ec4b944a515e501776b81056f";
     const recent = [];
-    const keywordPool = ["happy", "sad", "angry", "love", "smile", "surprised", "laugh", "cry", "cool", "sleep"];
+    const keywordPool = [
+      "happy", "sad", "angry", "love", "smile", "surprised", 
+      "laugh", "cry", "cool", "sleep", "party", "food", 
+      "heart", "star", "fire", "music", "travel", "nature"
+    ];
+
+    let isLoading = false;
 
     function showRandom() {
       const randomKeyword = keywordPool[Math.floor(Math.random() * keywordPool.length)];
@@ -80,55 +499,162 @@
     }
 
     function fetchEmoji() {
+      if (isLoading) return;
+      
       const keyword = document.getElementById("search").value.trim();
-      if (!keyword) return;
+      if (!keyword) {
+        showError("請輸入關鍵字！");
+        return;
+      }
 
+      setLoading(true);
       const url = `https://emoji-api.com/emojis?search=${encodeURIComponent(keyword)}&access_key=${apiKey}`;
-
+      
       fetch(url)
         .then(res => res.json())
         .then(data => {
-          console.log("API 回傳資料：", data); // 除錯用
-          const emojis = Array.isArray(data)
-            ? data.filter(item => item.character)
-            : [];
-
-          const result = emojis.length > 0
-            ? emojis[Math.floor(Math.random() * emojis.length)].character
-            : "😕 找不到 emoji 或回傳錯誤";
-
-          document.getElementById("emoji-display").innerText = result;
-          if (!result.includes("找不到")) addToRecent(result);
+          console.log("API 回傳資料：", data);
+          const emojis = Array.isArray(data) ? data.filter(item => item.character) : [];
+          
+          if (emojis.length > 0) {
+            const result = emojis[Math.floor(Math.random() * emojis.length)].character;
+            updateEmojiDisplay(result);
+            addToRecent(result);
+          } else {
+            showError("😕 找不到相關的 Emoji，試試其他關鍵字吧！");
+          }
         })
         .catch(err => {
-          document.getElementById("emoji-display").innerText = "🚫 錯誤，請稍後再試";
           console.error("API 錯誤：", err);
+          showError("🚫 網路連接出現問題，請稍後再試");
+        })
+        .finally(() => {
+          setLoading(false);
         });
     }
 
+    function updateEmojiDisplay(emoji) {
+      const emojiText = document.getElementById("emojiText");
+      emojiText.textContent = emoji;
+      emojiText.classList.remove('bounce');
+      setTimeout(() => {
+        emojiText.classList.add('bounce');
+      }, 10);
+    }
+
+    function showError(message) {
+      const emojiText = document.getElementById("emojiText");
+      emojiText.textContent = message;
+      emojiText.classList.remove('bounce');
+      setTimeout(() => {
+        emojiText.classList.add('bounce');
+      }, 10);
+    }
+
+    function setLoading(loading) {
+      isLoading = loading;
+      const searchBtn = document.getElementById("searchBtn");
+      const randomBtn = document.getElementById("randomBtn");
+      
+      if (loading) {
+        searchBtn.classList.add('loading');
+        randomBtn.classList.add('loading');
+        searchBtn.textContent = '';
+        randomBtn.textContent = '';
+      } else {
+        searchBtn.classList.remove('loading');
+        randomBtn.classList.remove('loading');
+        searchBtn.innerHTML = '🚀 開始搜尋';
+        randomBtn.innerHTML = '🎲 隨機探索';
+      }
+    }
+
     function copyToClipboard() {
-      const text = document.getElementById("emoji-display").innerText;
-      if (text && !text.includes("找不到") && !text.includes("錯誤")) {
+      const text = document.getElementById("emojiText").textContent;
+      if (text && !text.includes("找不到") && !text.includes("網路連接") && !text.includes("準備好探索")) {
         navigator.clipboard.writeText(text).then(() => {
-          alert("已複製到剪貼簿：\n" + text);
+          showCopyFeedback(text);
+        }).catch(() => {
+          // 備用方案
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          showCopyFeedback(text);
         });
       }
     }
 
-    function addToRecent(face) {
-      recent.unshift(face);
-      if (recent.length > 5) recent.pop();
+    function showCopyFeedback(emoji) {
+      const feedback = document.getElementById("copyFeedback");
+      const copyText = document.getElementById("copyText");
+      copyText.textContent = `✨ 已複製 ${emoji} 到剪貼簿！`;
+      feedback.classList.add("show");
+      setTimeout(() => {
+        feedback.classList.remove("show");
+      }, 3000);
+    }
+
+    function addToRecent(emoji) {
+      if (recent.includes(emoji)) {
+        recent.splice(recent.indexOf(emoji), 1);
+      }
+      recent.unshift(emoji);
+      if (recent.length > 8) recent.pop();
       updateRecentDisplay();
     }
 
     function updateRecentDisplay() {
-      const container = document.getElementById("recent-list");
+      const container = document.getElementById("recentContainer");
       if (recent.length === 0) {
-        container.innerHTML = "(尚無)";
+        container.innerHTML = '<div class="empty-state">還沒有探索過任何 Emoji 呢～</div>';
       } else {
-        container.innerHTML = recent.map(f => `<span>${f}</span>`).join(" ");
+        container.innerHTML = recent.map(emoji => 
+          `<div class="recent-item" onclick="selectRecentEmoji('${emoji}')" title="點擊重新選擇">${emoji}</div>`
+        ).join('');
       }
     }
+
+    function selectRecentEmoji(emoji) {
+      updateEmojiDisplay(emoji);
+    }
+
+    function searchKeyword(keyword) {
+      document.getElementById("search").value = keyword;
+      fetchEmoji();
+    }
+
+    function createKeywordsGrid() {
+      const keywordsGrid = document.getElementById("keywordsGrid");
+      keywordsGrid.innerHTML = keywordPool.map(keyword => 
+        `<div class="keyword-tag" onclick="searchKeyword('${keyword}')">${keyword}</div>`
+      ).join('');
+    }
+
+    // 事件監聽器
+    document.getElementById("search").addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        fetchEmoji();
+      }
+    });
+
+    // 鍵盤快捷鍵
+    document.addEventListener('keydown', function(event) {
+      if (event.key === ' ' && document.activeElement.tagName !== 'INPUT') {
+        event.preventDefault();
+        showRandom();
+      } else if (event.ctrlKey && event.key === 'c') {
+        copyToClipboard();
+      }
+    });
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      createKeywordsGrid();
+      updateRecentDisplay();
+    });
   </script>
 </body>
 </html>
