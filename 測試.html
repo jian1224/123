@@ -88,22 +88,27 @@
       fetch(url)
         .then(res => res.json())
         .then(data => {
-          const emojis = data.filter(item => item.character);
+          console.log("API 回傳資料：", data); // 除錯用
+          const emojis = Array.isArray(data)
+            ? data.filter(item => item.character)
+            : [];
+
           const result = emojis.length > 0
             ? emojis[Math.floor(Math.random() * emojis.length)].character
-            : "😕 找不到 emoji";
+            : "😕 找不到 emoji 或回傳錯誤";
+
           document.getElementById("emoji-display").innerText = result;
           if (!result.includes("找不到")) addToRecent(result);
         })
         .catch(err => {
-          document.getElementById("emoji-display").innerText = "錯誤，請稍後再試";
-          console.error(err);
+          document.getElementById("emoji-display").innerText = "🚫 錯誤，請稍後再試";
+          console.error("API 錯誤：", err);
         });
     }
 
     function copyToClipboard() {
       const text = document.getElementById("emoji-display").innerText;
-      if (text && !text.includes("找不到")) {
+      if (text && !text.includes("找不到") && !text.includes("錯誤")) {
         navigator.clipboard.writeText(text).then(() => {
           alert("已複製到剪貼簿：\n" + text);
         });
