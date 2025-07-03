@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emoji 表情推薦工具</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #fefefe;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    #search {
+      padding: 10px;
+      width: 60%;
+      font-size: 16px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+      color: white;
+    }
+    #random-btn { background: #FF9800; }
+    #copy-btn { background: #2196F3; }
+    #emoji-display {
+      margin-top: 20px;
+      font-size: 2rem;
+      padding: 20px;
+      background: #fff;
+      display: inline-block;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      min-width: 200px;
+    }
+    #recent {
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+    #recent span {
+      margin: 0 8px;
+      display: inline-block;
+    }
+    @media (max-width: 600px) {
+      #search { width: 90%; }
+      #emoji-display { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Emoji 表情推薦工具</h1>
+  <input type="text" id="search" placeholder="輸入關鍵字搜尋 emoji..." onkeydown="if(event.key==='Enter') fetchEmoji()"/>
+  <br />
+  <button id="random-btn" onclick="showRandom()">隨機推薦</button>
+  <button id="copy-btn" onclick="copyToClipboard()">複製表情</button>
+
+  <div id="emoji-display">請輸入關鍵字或點擊隨機推薦！</div>
+
+  <div id="recent"><strong>最近使用：</strong> <span id="recent-list">(尚無)</span></div>
+
+  <script>
+    const recent = [];
+    const keywordPool = ["happy", "sad", "angry", "love", "smile", "surprise", "laugh", "cry", "cool", "sleep"];
+
+    function showRandom() {
+      const randomKeyword = keywordPool[Math.floor(Math.random() * keywordPool.length)];
+      document.getElementById("search").value = randomKeyword;
+      fetchEmoji();
+    }
+
+    function fetchEmoji() {
+      const keyword = document.getElementById("search").value.trim();
+      if (!keyword) return;
+
+      const url = `https://www.emoji.family/api/emojis?search=${encodeURIComponent(keyword)}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          const emojis = data.filter(item => item.character);
+          const result = emojis.length > 0
+            ? emojis[Math.floor(Math.random() * emojis.length)].character
+            : "😕 找不到 emoji";
+          document.getElementById("emoji-display").innerText = result;
+          if (!result.includes("找不到")) addToRecent(result);
+        })
+        .catch(err => {
+          document.getElementById("emoji-display").innerText = "錯誤，請稍後再試";
+          console.error(err);
+        });
+    }
+
+    function copyToClipboard() {
+      const text = document.getElementById("emoji-display").innerText;
+      if (text && !text.includes("找不到")) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert("已複製到剪貼簿：\n" + text);
+        });
+      }
+    }
+
+    function addToRecent(face) {
+      recent.unshift(face);
+      if (recent.length > 5) recent.pop();
+      updateRecentDisplay();
+    }
+
+    function updateRecentDisplay() {
+      const container = document.getElementById("recent-list");
+      if (recent.length === 0) {
+        container.innerHTML = "(尚無)";
+      } else {
+        container.innerHTML = recent.map(f => `<span>${f}</span>`).join(" ");
+      }
+    }
+  </script>
+</body>
+</html>
