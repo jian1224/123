@@ -19,7 +19,7 @@
       width: 60%;
       font-size: 16px;
       margin-bottom: 20px;
-      border: 1px solid #ccc;
+      border: 1px solid #ffffff;
       border-radius: 5px;
     }
     button {
@@ -69,8 +69,9 @@
   <div id="recent"><strong>最近使用：</strong> <span id="recent-list">(尚無)</span></div>
 
   <script>
+    const apiKey = "857cbe3e777e160ec4b944a515e501776b81056f";
     const recent = [];
-    const keywordPool = ["happy", "sad", "angry", "love", "smile", "surprise", "laugh", "cry", "cool", "sleep"];
+    const keywordPool = ["happy", "sad", "angry", "love", "smile", "surprised", "laugh", "cry", "cool", "sleep"];
 
     function showRandom() {
       const randomKeyword = keywordPool[Math.floor(Math.random() * keywordPool.length)];
@@ -82,7 +83,7 @@
       const keyword = document.getElementById("search").value.trim();
       if (!keyword) return;
 
-      const url = `https://www.emoji.family/api/emojis?search=${encodeURIComponent(keyword)}`;
+      const url = `https://emoji-api.com/emojis?search=${encodeURIComponent(keyword)}&access_key=${apiKey}`;
 
       fetch(url)
         .then(res => res.json())
