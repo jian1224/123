@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>梗圖蒐尋器</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: #f7f7f7;
+      margin: 0;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 300px;
+      margin: 10px 0;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      background-color: #5c6bc0;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #3f51b5;
+    }
+
+    .image-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    img {
+      max-width: 80%;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>梗圖蒐尋器</h1>
+
+  <input type="text" id="searchInput" placeholder="搜尋梗圖">
+  <button onclick="searchMeme()">搜尋</button>
+  <button onclick="getRandomMeme()">隨機</button>
+
+  <div class="image-container">
+    <img id="memeImage" src="" alt="梗圖將顯示在這裡">
+    <div>
+      <button id="copyButton" onclick="copyImageUrl()">複製圖片 URL</button>
+      <button id="downloadButton" onclick="downloadImage()">下載圖片</button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://memes.tw/wtf/api'; // API URL
+
+    // 搜尋梗圖
+    function searchMeme() {
+      const searchTerm = document.getElementById('searchInput').value;
+
+      if (searchTerm === '') {
+        alert('請輸入搜尋關鍵字');
+        return;
+      }
+
+      fetch(`${API_URL}?q=${searchTerm}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.length > 0) {
+            const meme = data[0]; // 只顯示第一張搜尋結果
+            document.getElementById('memeImage').src = meme.src;
+            document.getElementById('copyButton').style.display = 'inline-block';
+            document.getElementById('downloadButton').style.display = 'inline-block';
+          } else {
+            alert('沒有找到相關梗圖');
+          }
+        })
+        .catch(error => {
+          console.error('錯誤:', error);
+          alert('無法搜尋梗圖');
+        });
+    }
+
+    // 隨機獲取梗圖
+    function getRandomMeme() {
+      fetch(API_URL)
+        .then(response => response.json())
+        .then(data => {
+          const meme = data[0]; // 隨機一張梗圖
+          document.getElementById('memeImage').src = meme.src;
+          document.getElementById('copyButton').style.display = 'inline-block';
+          document.getElementById('downloadButton').style.display = 'inline-block';
+        })
+        .catch(error => {
+          console.error('錯誤:', error);
+          alert('無法獲取隨機梗圖');
+        });
+    }
+
+    // 複製圖片 URL
+    function copyImageUrl() {
+      const imageUrl = document.getElementById('memeImage').src;
+      navigator.clipboard.writeText(imageUrl)
+        .then(() => {
+          alert('圖片 URL 已複製');
+        })
+        .catch(err => {
+          console.error('複製失敗:', err);
+          alert('複製圖片 URL 失敗');
+        });
+    }
+
+    // 下載圖片
+    function downloadImage() {
+      const imageUrl = document.getElementById('memeImage').src;
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = 'meme.jpg'; // 設定下載的檔名
+      link.click();
+    }
+  </script>
+
+</body>
+</html>
