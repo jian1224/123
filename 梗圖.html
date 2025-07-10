@@ -3,136 +3,456 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>梗圖蒐尋器</title>
+  <title>梗圖搜尋器</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      min-height: 100vh;
-      background-color: #f7f7f7;
-      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .search-section {
+      margin-bottom: 30px;
+    }
+
+    .search-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     input[type="text"] {
-      padding: 10px;
-      width: 300px;
-      margin: 10px 0;
-      border: 2px solid #ccc;
-      border-radius: 5px;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 25px;
+      outline: none;
+      transition: all 0.3s ease;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    input[type="text"]:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
     button {
-      padding: 10px 20px;
-      margin: 5px;
+      padding: 12px 24px;
+      font-size: 16px;
       border: none;
-      background-color: #5c6bc0;
-      color: white;
-      border-radius: 5px;
+      border-radius: 25px;
       cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(45deg, #f093fb, #f5576c);
+      color: white;
+    }
+
+    .btn-action {
+      background: linear-gradient(45deg, #4facfe, #00f2fe);
+      color: white;
+      margin: 5px;
     }
 
     button:hover {
-      background-color: #3f51b5;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .loading {
+      display: none;
+      margin: 20px 0;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     .image-container {
       margin-top: 20px;
-      text-align: center;
+      position: relative;
+    }
+
+    .image-wrapper {
+      position: relative;
+      display: inline-block;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      margin-bottom: 20px;
     }
 
     img {
-      max-width: 80%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .image-wrapper:hover img {
+      transform: scale(1.05);
+    }
+
+    .action-buttons {
+      display: none;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .action-buttons.show {
+      display: flex;
+    }
+
+    .error-message {
+      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.1);
+      padding: 10px;
+      border-radius: 10px;
       margin: 10px 0;
+      display: none;
+    }
+
+    .success-message {
+      color: #27ae60;
+      background: rgba(39, 174, 96, 0.1);
+      padding: 10px;
+      border-radius: 10px;
+      margin: 10px 0;
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 2em;
+      }
+      
+      .search-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      input[type="text"] {
+        min-width: auto;
+      }
+      
+      button {
+        width: 100%;
+        margin: 5px 0;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h1>🎭 梗圖搜尋器</h1>
+    
+    <div class="search-section">
+      <div class="search-container">
+        <input type="text" id="searchInput" placeholder="輸入關鍵字搜尋梗圖..." onkeypress="handleKeyPress(event)">
+        <button class="btn-primary" onclick="searchMeme()">🔍 搜尋</button>
+        <button class="btn-secondary" onclick="getRandomMeme()">🎲 隨機</button>
+      </div>
+    </div>
 
-  <h1>梗圖蒐尋器</h1>
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>正在搜尋梗圖...</p>
+    </div>
 
-  <input type="text" id="searchInput" placeholder="搜尋梗圖">
-  <button onclick="searchMeme()">搜尋</button>
-  <button onclick="getRandomMeme()">隨機</button>
+    <div class="error-message" id="errorMessage"></div>
+    <div class="success-message" id="successMessage"></div>
 
-  <div class="image-container">
-    <img id="memeImage" src="" alt="梗圖將顯示在這裡">
-    <div>
-      <button id="copyButton" onclick="copyImageUrl()">複製圖片 URL</button>
-      <button id="downloadButton" onclick="downloadImage()">下載圖片</button>
+    <div class="image-container">
+      <div class="image-wrapper" id="imageWrapper" style="display: none;">
+        <img id="memeImage" src="" alt="梗圖">
+      </div>
+      
+      <div class="action-buttons" id="actionButtons">
+        <button class="btn-action" onclick="copyImageUrl()">📋 複製連結</button>
+        <button class="btn-action" onclick="downloadImage()">⬇️ 下載圖片</button>
+        <button class="btn-action" onclick="shareImage()">📤 分享</button>
+      </div>
     </div>
   </div>
 
   <script>
-    const API_URL = 'https://memes.tw/wtf/api'; // API URL
+    const API_URL = 'https://memes.tw/wtf/api';
+    let currentImageUrl = '';
+
+    // 處理 Enter 鍵搜尋
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        searchMeme();
+      }
+    }
+
+    // 顯示載入狀態
+    function showLoading() {
+      document.getElementById('loading').style.display = 'block';
+      hideMessages();
+    }
+
+    // 隱藏載入狀態
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
+
+    // 顯示錯誤訊息
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    // 顯示成功訊息
+    function showSuccess(message) {
+      const successDiv = document.getElementById('successMessage');
+      successDiv.textContent = message;
+      successDiv.style.display = 'block';
+      setTimeout(() => {
+        successDiv.style.display = 'none';
+      }, 3000);
+    }
+
+    // 隱藏訊息
+    function hideMessages() {
+      document.getElementById('errorMessage').style.display = 'none';
+      document.getElementById('successMessage').style.display = 'none';
+    }
+
+    // 顯示圖片
+    function displayImage(imageUrl) {
+      currentImageUrl = imageUrl;
+      const imageElement = document.getElementById('memeImage');
+      const imageWrapper = document.getElementById('imageWrapper');
+      const actionButtons = document.getElementById('actionButtons');
+      
+      imageElement.src = imageUrl;
+      imageWrapper.style.display = 'inline-block';
+      actionButtons.classList.add('show');
+    }
 
     // 搜尋梗圖
     function searchMeme() {
-      const searchTerm = document.getElementById('searchInput').value;
+      const searchTerm = document.getElementById('searchInput').value.trim();
 
       if (searchTerm === '') {
-        alert('請輸入搜尋關鍵字');
+        showError('請輸入搜尋關鍵字');
         return;
       }
 
-      fetch(`${API_URL}?q=${searchTerm}`)
-        .then(response => response.json())
+      showLoading();
+
+      fetch(`${API_URL}?q=${encodeURIComponent(searchTerm)}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('網路請求失敗');
+          }
+          return response.json();
+        })
         .then(data => {
-          if (data.length > 0) {
-            const meme = data[0]; // 只顯示第一張搜尋結果
-            document.getElementById('memeImage').src = meme.src;
-            document.getElementById('copyButton').style.display = 'inline-block';
-            document.getElementById('downloadButton').style.display = 'inline-block';
+          hideLoading();
+          
+          if (data && data.length > 0) {
+            // 隨機選擇一張搜尋結果
+            const randomIndex = Math.floor(Math.random() * data.length);
+            const meme = data[randomIndex];
+            displayImage(meme.src);
+            showSuccess(`找到 ${data.length} 張相關梗圖`);
           } else {
-            alert('沒有找到相關梗圖');
+            showError('沒有找到相關梗圖，請嘗試其他關鍵字');
           }
         })
         .catch(error => {
+          hideLoading();
           console.error('錯誤:', error);
-          alert('無法搜尋梗圖');
+          showError('無法搜尋梗圖，請檢查網路連線');
         });
     }
 
     // 隨機獲取梗圖
     function getRandomMeme() {
+      showLoading();
+
       fetch(API_URL)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('網路請求失敗');
+          }
+          return response.json();
+        })
         .then(data => {
-          const meme = data[0]; // 隨機一張梗圖
-          document.getElementById('memeImage').src = meme.src;
-          document.getElementById('copyButton').style.display = 'inline-block';
-          document.getElementById('downloadButton').style.display = 'inline-block';
+          hideLoading();
+          
+          if (data && data.length > 0) {
+            const randomIndex = Math.floor(Math.random() * data.length);
+            const meme = data[randomIndex];
+            displayImage(meme.src);
+            showSuccess('隨機梗圖已載入');
+          } else {
+            showError('無法獲取隨機梗圖');
+          }
         })
         .catch(error => {
+          hideLoading();
           console.error('錯誤:', error);
-          alert('無法獲取隨機梗圖');
+          showError('無法獲取隨機梗圖，請檢查網路連線');
         });
     }
 
     // 複製圖片 URL
     function copyImageUrl() {
-      const imageUrl = document.getElementById('memeImage').src;
-      navigator.clipboard.writeText(imageUrl)
-        .then(() => {
-          alert('圖片 URL 已複製');
-        })
-        .catch(err => {
-          console.error('複製失敗:', err);
-          alert('複製圖片 URL 失敗');
-        });
+      if (!currentImageUrl) {
+        showError('沒有可複製的圖片');
+        return;
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(currentImageUrl)
+          .then(() => {
+            showSuccess('圖片連結已複製到剪貼簿');
+          })
+          .catch(err => {
+            console.error('複製失敗:', err);
+            fallbackCopy(currentImageUrl);
+          });
+      } else {
+        fallbackCopy(currentImageUrl);
+      }
+    }
+
+    // 備用複製方法
+    function fallbackCopy(text) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showSuccess('圖片連結已複製到剪貼簿');
+      } catch (err) {
+        showError('複製失敗，請手動複製');
+      }
+      document.body.removeChild(textArea);
     }
 
     // 下載圖片
     function downloadImage() {
-      const imageUrl = document.getElementById('memeImage').src;
-      const link = document.createElement('a');
-      link.href = imageUrl;
-      link.download = 'meme.jpg'; // 設定下載的檔名
-      link.click();
-    }
-  </script>
+      if (!currentImageUrl) {
+        showError('沒有可下載的圖片');
+        return;
+      }
 
+      try {
+        const link = document.createElement('a');
+        link.href = currentImageUrl;
+        link.download = `meme_${Date.now()}.jpg`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showSuccess('圖片下載開始');
+      } catch (error) {
+        console.error('下載失敗:', error);
+        showError('下載失敗，請嘗試右鍵另存圖片');
+      }
+    }
+
+    // 分享圖片
+    function shareImage() {
+      if (!currentImageUrl) {
+        showError('沒有可分享的圖片');
+        return;
+      }
+
+      if (navigator.share) {
+        navigator.share({
+          title: '有趣的梗圖',
+          text: '看看這張有趣的梗圖！',
+          url: currentImageUrl
+        }).then(() => {
+          showSuccess('分享成功');
+        }).catch(err => {
+          console.error('分享失敗:', err);
+          copyImageUrl(); // 如果分享失敗，改為複製連結
+        });
+      } else {
+        copyImageUrl(); // 如果不支援分享，改為複製連結
+      }
+    }
+
+    // 頁面載入時獲取一張隨機梗圖
+    window.addEventListener('load', () => {
+      getRandomMeme();
+    });
+  </script>
 </body>
 </html>
