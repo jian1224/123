@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工時管理系統 - 心智圖整合版（修復版）</title>
+    <title>工時管理系統 - 心智圖整合版</title>
     <style>
         * {
             margin: 0;
@@ -770,69 +770,18 @@
             display: block;
         }
 
-        /* 小地圖容器 - 修復版 */
+        /* 小地圖容器 */
         .minimap-container {
             position: absolute;
             bottom: 10px;
             right: 10px;
             width: 200px;
             height: 150px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             z-index: 101;
-            display: none;
-            overflow: hidden;
-        }
-
-        .minimap-container.show {
-            display: block;
-        }
-
-        .minimap-header {
-            background: #f5f5f5;
-            padding: 5px 10px;
-            border-bottom: 1px solid #ddd;
-            font-size: 12px;
-            font-weight: 500;
-            color: #666;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .minimap-close {
-            background: none;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 0;
-            width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .minimap-close:hover {
-            color: #666;
-        }
-
-        .minimap-content {
-            width: 100%;
-            height: calc(100% - 30px);
-            position: relative;
-        }
-
-        /* 視窗指示器 */
-        .minimap-viewport {
-            position: absolute;
-            border: 2px solid #2196f3;
-            background: rgba(33, 150, 243, 0.1);
-            pointer-events: none;
-            z-index: 102;
         }
     </style>
 </head>
@@ -980,7 +929,7 @@
                                 
                                 <!-- 其他功能 -->
                                 <div class="toolbar-group">
-                                    <button class="toolbar-btn" id="minimapToggleBtn" onclick="toggleMiniMap()">
+                                    <button class="toolbar-btn" onclick="toggleMiniMap()">
                                         <span>🗺️</span> 小地圖
                                     </button>
                                     <button class="toolbar-btn" onclick="toggleFullScreen()">
@@ -989,15 +938,7 @@
                                 </div>
                             </div>
                             <div id="mindMapContent" style="width: 100%; height: 100%;"></div>
-                            
-                            <!-- 修復版小地圖容器 -->
-                            <div class="minimap-container" id="minimapContainer">
-                                <div class="minimap-header">
-                                    <span>導航地圖</span>
-                                    <button class="minimap-close" onclick="toggleMiniMap()">&times;</button>
-                                </div>
-                                <div class="minimap-content" id="minimapContent"></div>
-                            </div>
+                            <div class="minimap-container" id="minimapContainer" style="display: none;"></div>
                         </div>
                     </div>
                 </div>
@@ -1131,14 +1072,13 @@
         let currentTopTaskId = null;
         let currentMode = 'project';
         let editingTaskId = null;
-        let editingSubTaskId = null;
-        let editingNodeData = null;
+        let editingSubTaskId = null; // 新增：追蹤正在編輯的子任務
+        let editingNodeData = null; // 新增：追蹤正在編輯的節點數據
         let mindMapInstance = null;
-        let miniMapInstance = null; // 小地圖實例
         let currentTheme = 'default';
         let isEditMode = false;
         let showMiniMap = false;
-        let miniMindMaps = {};
+        let miniMindMaps = {}; // 儲存縮圖心智圖實例
 
         // API 配置
         const API_BASE_URL = './projects-mock-data.json';
@@ -1484,7 +1424,6 @@
                 const miniMap = new SimpleMindMap({
                     el: innerContainer,
                     data: convertToMindMapData(task),
-                    plugins: ['MINIMAP'],
                     theme: 'default',
                     layout: 'logicalStructure',
                     scaleRatio: 0.6,
@@ -1542,12 +1481,6 @@
                 mindMapInstance = null;
             }
 
-            // 銷毀舊的小地圖實例
-            if (miniMapInstance) {
-                miniMapInstance.destroy();
-                miniMapInstance = null;
-            }
-
             try {
                 if (!SimpleMindMap) {
                     throw new Error('SimpleMindMap 未載入');
@@ -1595,12 +1528,11 @@
                     }
                 });
                 
-                // 等待心智圖渲染完成後初始化小地圖
-                mindMapInstance.on('draw', () => {
-                    if (showMiniMap) {
-                        initMiniMap();
-                    }
-                });
+                // 初始化小地圖
+                if (showMiniMap && mindMapInstance.miniMap) {
+                    const minimapContainer = document.getElementById('minimapContainer');
+                    mindMapInstance.miniMap.render(minimapContainer);
+                }
                 
                 console.log('心智圖創建成功');
             } catch (error) {
@@ -1612,126 +1544,6 @@
                         <p style="font-size: 12px; color: #999;">錯誤訊息：${error.message}</p>
                     </div>
                 `;
-            }
-        }
-
-        // 初始化小地圖 - 修復版
-        function initMiniMap() {
-            if (!mindMapInstance || !MiniMap) {
-                console.warn('無法初始化小地圖：缺少必要組件');
-                return;
-            }
-
-            try {
-                const minimapContainer = document.getElementById('minimapContent');
-                if (!minimapContainer) {
-                    console.warn('找不到小地圖容器');
-                    return;
-                }
-
-                // 清空容器
-                minimapContainer.innerHTML = '';
-
-                // 創建小地圖實例
-                miniMapInstance = new SimpleMindMap({
-                    el: minimapContainer,
-                    data: mindMapInstance.getData(),
-                    theme: currentTheme,
-                    layout: mindMapInstance.getLayout(),
-                    scaleRatio: 0.1,
-                    readonly: true,
-                    isShowExpandBtn: false,
-                    enableFreeDrag: false,
-                    mousewheel: false,
-                    // 小地圖的初始縮放
-                    viewData: {
-                        scale: 0.2
-                    }
-                });
-
-                // 等待小地圖渲染完成
-                miniMapInstance.on('draw', () => {
-                    // 自動適應容器大小
-                    setTimeout(() => {
-                        if (miniMapInstance && miniMapInstance.view) {
-                            miniMapInstance.view.fit();
-                        }
-                    }, 100);
-                });
-
-                // 同步主心智圖的變化到小地圖
-                mindMapInstance.on('data_change', () => {
-                    if (miniMapInstance) {
-                        miniMapInstance.setData(mindMapInstance.getData());
-                    }
-                });
-
-                // 小地圖點擊導航功能
-                miniMapInstance.on('node_click', (node) => {
-                    if (mindMapInstance) {
-                        // 找到對應的主心智圖節點並居中顯示
-                        const mainNode = findNodeById(mindMapInstance.renderer.root, node.nodeData.data.uid || node.uid);
-                        if (mainNode) {
-                            mindMapInstance.view.focusNode(mainNode);
-                        }
-                    }
-                });
-
-                console.log('小地圖初始化成功');
-            } catch (error) {
-                console.error('小地圖初始化失敗:', error);
-                // 顯示錯誤信息
-                minimapContainer.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 12px;">
-                        小地圖載入失敗
-                    </div>
-                `;
-            }
-        }
-
-        // 查找節點by ID
-        function findNodeById(rootNode, targetId) {
-            if (!rootNode || !targetId) return null;
-            
-            function searchNode(node) {
-                if (node.uid === targetId || (node.nodeData && node.nodeData.data && node.nodeData.data.uid === targetId)) {
-                    return node;
-                }
-                if (node.children) {
-                    for (let child of node.children) {
-                        const found = searchNode(child);
-                        if (found) return found;
-                    }
-                }
-                return null;
-            }
-            
-            return searchNode(rootNode);
-        }
-
-        // 切換小地圖顯示 - 修復版
-        function toggleMiniMap() {
-            showMiniMap = !showMiniMap;
-            const minimapContainer = document.getElementById('minimapContainer');
-            const toggleBtn = document.getElementById('minimapToggleBtn');
-            
-            if (showMiniMap) {
-                minimapContainer.classList.add('show');
-                if (toggleBtn) toggleBtn.classList.add('active');
-                
-                // 如果心智圖已存在，初始化小地圖
-                if (mindMapInstance && currentMode === 'mindmap') {
-                    initMiniMap();
-                }
-            } else {
-                minimapContainer.classList.remove('show');
-                if (toggleBtn) toggleBtn.classList.remove('active');
-                
-                // 銷毀小地圖實例
-                if (miniMapInstance) {
-                    miniMapInstance.destroy();
-                    miniMapInstance = null;
-                }
             }
         }
 
@@ -1755,10 +1567,7 @@
             // 數據變化事件
             mindMapInstance.on('data_change', (data) => {
                 console.log('數據變化:', data);
-                // 同步到小地圖
-                if (miniMapInstance) {
-                    miniMapInstance.setData(data);
-                }
+                // 不要在這裡同步，因為我們會在模態框確認後手動同步
             });
 
             // 節點激活事件
@@ -1781,20 +1590,6 @@
                     }, 100);
                 }
             });
-
-            // 視圖變化事件（用於同步小地圖視窗）
-            mindMapInstance.on('view_data_change', (viewData) => {
-                updateMiniMapViewport(viewData);
-            });
-        }
-
-        // 更新小地圖視窗指示器
-        function updateMiniMapViewport(viewData) {
-            if (!miniMapInstance || !showMiniMap) return;
-            
-            // 這裡可以添加視窗指示器的邏輯
-            // 由於 simple-mind-map 的 MiniMap 插件會自動處理視窗指示器
-            // 所以這個函數主要用於擴展功能
         }
 
         // 轉換數據為心智圖格式
@@ -1815,8 +1610,7 @@
                             color: '#333',
                             borderColor: getStatusBorderColor(subTask.status),
                             borderWidth: 2,
-                            borderRadius: 5,
-                            uid: subTask.id // 保留原始 ID 用於導航
+                            borderRadius: 5
                         },
                         children: children,
                         uid: subTask.id // 保留原始 ID
@@ -1833,11 +1627,9 @@
                     fontSize: 16,
                     fontWeight: 'bold',
                     backgroundColor: '#4287f5',
-                    color: '#fff',
-                    uid: `root-${task.id}` // 根節點 ID
+                    color: '#fff'
                 },
-                children: convertSubTasks(task.subTasks),
-                uid: `root-${task.id}` // 根節點 ID
+                children: convertSubTasks(task.subTasks)
             };
         }
 
@@ -1868,8 +1660,7 @@
                         text: '新任務',
                         expand: true,
                         backgroundColor: getStatusColor('pending'),
-                        borderColor: getStatusBorderColor('pending'),
-                        uid: Date.now() // 新節點 ID
+                        borderColor: getStatusBorderColor('pending')
                     }
                 });
                 
@@ -1903,8 +1694,7 @@
                         text: '新任務',
                         expand: true,
                         backgroundColor: getStatusColor('pending'),
-                        borderColor: getStatusBorderColor('pending'),
-                        uid: Date.now() // 新節點 ID
+                        borderColor: getStatusBorderColor('pending')
                     }
                 });
                 
@@ -1969,18 +1759,12 @@
             if (mindMapInstance) {
                 mindMapInstance.setTheme(theme);
             }
-            if (miniMapInstance) {
-                miniMapInstance.setTheme(theme);
-            }
         }
 
         // 切換佈局
         function changeLayout(layout) {
             if (mindMapInstance) {
                 mindMapInstance.setLayout(layout);
-            }
-            if (miniMapInstance) {
-                miniMapInstance.setLayout(layout);
             }
         }
 
@@ -2014,6 +1798,21 @@
             } catch (error) {
                 console.error('導出失敗:', error);
                 alert('導出失敗，請稍後再試');
+            }
+        }
+
+        // 切換小地圖
+        function toggleMiniMap() {
+            showMiniMap = !showMiniMap;
+            const minimapContainer = document.getElementById('minimapContainer');
+            
+            if (showMiniMap) {
+                minimapContainer.style.display = 'block';
+                if (mindMapInstance && mindMapInstance.miniMap) {
+                    mindMapInstance.miniMap.render(minimapContainer);
+                }
+            } else {
+                minimapContainer.style.display = 'none';
             }
         }
 
