@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏆 BEYBLADE X 大賽管理系統 v16.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏆 BEYBLADE X 大賽管理系統 v17.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -28,7 +28,7 @@
         h2 { color: var(--accent); border-left: 5px solid var(--accent); padding-left: 12px; font-size: 20px; margin: 15px 0; }
         .section { margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
         
-        input[type="text"], input[type="number"], select { padding: 12px 16px; background: #0f172a; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; }
+        input[type="text"], input[type="number"], select { padding: 12px 16px; background: #0f172a; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         button { padding: 11px 22px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .btn-primary { background: var(--accent); color: #000; }
         .btn-primary:hover { background: #d9f99d; }
@@ -100,13 +100,66 @@
         .tree-child-wrapper::after { content: ''; position: absolute; right: 0; top: 50%; width: 15px; border-top: var(--line-thick) solid var(--line-color); }
         .tree-parent { margin-left: 15px; position: relative; }
         .tree-parent::before { content: ''; position: absolute; left: -15px; top: 50%; width: 15px; border-top: var(--line-thick) solid var(--line-color); }
-
         .single-third-place { margin-left: 60px; padding-left: 40px; border-left: 2px dashed #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
+        /* 基本共用隱藏 / 表格 */
         .hidden { display: none !important; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #0f172a; border-radius: 8px; overflow: hidden; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); }
         th { background-color: #1e293b; color: var(--accent); }
+
+        /* ================== 👑 RWD 行動裝置自適應黑科技 ================== */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 28px; }
+            
+            /* 設定名單區塊改為直向堆疊 */
+            .setup-control-bar { flex-direction: column; align-items: stretch; gap: 15px; }
+            .control-group { width: 100%; border-left: none !important; padding-left: 0 !important; justify-content: space-between; }
+            .control-group input { flex-grow: 1; margin-right: 10px; width: auto; }
+            
+            /* 👑 懸浮計分板手機專用排版 (改為多列結構) */
+            .fixed-control-panel { 
+                flex-direction: column; 
+                padding: 10px !important; 
+                border-radius: 0 0 12px 12px !important; 
+            }
+            .fixed-control-panel > button.btn-secondary { 
+                align-self: flex-start; 
+                margin-bottom: 5px; 
+                padding: 8px 12px; 
+            }
+            #active-scoring-zone { 
+                flex-wrap: wrap; 
+                justify-content: center; 
+                width: 100%; 
+            }
+            #match-label { 
+                width: 100%; 
+                text-align: center; 
+                margin-bottom: 8px; 
+                margin-right: 0 !important; 
+                display: block; 
+            }
+            /* 讓輸入框和名字好點擊 */
+            #p1-name-disp, #p2-name-disp { max-width: 70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+            .score-input { width: 55px; height: 45px; font-size: 20px !important; padding: 5px !important; }
+            /* 送出按鈕拉到最大 */
+            #active-scoring-zone .btn-primary { 
+                width: 100%; 
+                margin-left: 0 !important; 
+                margin-top: 12px; 
+                padding: 15px !important; 
+                font-size: 18px; 
+            }
+            .fixed-control-panel > div:last-child { display: none; } /* 隱藏排版用配重塊 */
+            
+            /* 因為計分板變高了，底下畫布要再往下退 */
+            .pad-top { padding-top: 180px; }
+            
+            /* 排行榜支援左右滑動 */
+            #leaderboard-table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
     </style>
 </head>
 <body>
@@ -115,7 +168,7 @@
     <div id="main-header" class="nav-bar">
         <div>
             <h1>BEYBLADE X</h1>
-            <div class="subtitle">ベイブレードエックス 賽事系統 v16.0</div>
+            <div class="subtitle">ベイブレードエックス 賽事系統 v17.0</div>
         </div>
     </div>
 
@@ -141,25 +194,25 @@
         
         <div style="text-align: center; margin-top: 20px; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
             <select id="tournamentMode">
-                <option value="elim-single">單翼淘汰賽 (不限人數)</option>
-                <option value="elim-double">雙翼淘汰賽 (最多 8 人)</option>
-                <option value="round-robin">循環戰 (全循環積分制)</option>
+                <option value="elim-single">單翼淘汰賽 (緊密樹狀圖，不限人數)</option>
+                <option value="elim-double">雙翼淘汰賽 (完美對稱，最多 8 人)</option>
+                <option value="round-robin">輪流戰 (全循環積分制)</option>
             </select>
             <button class="btn-success" onclick="startTournament()">正式產生賽事 ➔</button>
         </div>
     </div>
 
     <div id="fixed-control" class="fixed-control-panel hidden" data-html2canvas-ignore>
-        <button class="btn-secondary" style="padding: 6px 14px; font-size: 13px;" onclick="backToMenu()">⬅ 返回選單</button>
+        <button class="btn-secondary" onclick="backToMenu()">⬅ 返回選單</button>
         
         <div id="active-scoring-zone" style="flex-grow:1; text-align:center; display:flex; justify-content:center; align-items:center;">
-            <span id="match-label" style="font-weight: bold; color: var(--accent-orange); margin-right: 15px;">【當前對戰】</span>
+            <span id="match-label">【當前對戰】</span>
             <span id="p1-name-disp" style="font-size: 18px; font-weight: bold; color:#fff;">-</span>
             <input type="number" id="p1-score-input" class="score-input" value="0" min="0">
-            <span style="font-weight: bold; color: var(--text-muted);">VS</span>
+            <span style="font-weight: bold; color: var(--text-muted); margin: 0 5px;">VS</span>
             <input type="number" id="p2-score-input" class="score-input" value="0" min="0">
             <span id="p2-name-disp" style="font-size: 18px; font-weight: bold; color:#fff;">-</span>
-            <button class="btn-primary" style="padding: 6px 18px; margin-left: 20px;" onclick="submitGlobalResult()">確認比分</button>
+            <button class="btn-primary" onclick="submitGlobalResult()">確認比分</button>
         </div>
         
         <div id="finished-zone" class="hidden" style="flex-grow:1; text-align:center;">
@@ -223,14 +276,13 @@
             <tbody id="leaderboard-body"></tbody>
         </table>
         
-        <div style="margin-top:25px; display:flex; gap:15px;" data-html2canvas-ignore>
-            <button class="btn-download" style="flex:2; padding:15px;" onclick="downloadTournamentImage()">📷 擷取下載對戰海報</button>
+        <div style="margin-top:25px; display:flex; gap:15px; flex-wrap: wrap;" data-html2canvas-ignore>
+            <button class="btn-download" style="flex:2; padding:15px; width: 100%;" onclick="downloadTournamentImage()">📷 擷取下載對戰海報</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- 系統資料 ---
     let players = [];
     let currentMode = '';
     
@@ -356,7 +408,8 @@
             document.getElementById('p2-name-disp').innerText = found.p2.name;
             document.getElementById('p1-score-input').value = 0; document.getElementById('p2-score-input').value = 0;
             let box = document.getElementById(`mb-${found.id}`);
-            if(box) { box.classList.add('active'); box.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'}); }
+            // 手機版稍微延遲滑動，確保排版更新完畢
+            if(box) { setTimeout(()=>{ box.classList.add('active'); box.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'}); }, 50); }
         } else {
             document.getElementById('active-scoring-zone').classList.add('hidden');
             document.getElementById('finished-zone').classList.remove('hidden');
@@ -367,7 +420,6 @@
     }
 
     function submitGlobalResult() {
-        // 🚨 修正：如果是輪流戰，引導到正確的計分函式
         if (currentMode === 'round-robin') { submitRRResult(); return; }
 
         const s1 = parseInt(document.getElementById('p1-score-input').value);
@@ -400,7 +452,7 @@
         `;
     }
 
-    // ================== 模式一：雙翼對稱 ==================
+    // ================== 雙翼模式 ==================
     function initDoubleWing() {
         let shuffled = [...players].sort(()=>Math.random()-0.5);
         let byesCount = 8 - players.length; 
@@ -434,7 +486,7 @@
         document.getElementById('pod-4').innerText = m8.loser ? m8.loser.name : '-';
     }
 
-    // ================== 模式二：單翼無限樹狀 ==================
+    // ================== 單翼模式 ==================
     function initSingleWing() {
         let np = Math.pow(2, Math.ceil(Math.log2(players.length)));
         let numByes = np - players.length; 
@@ -504,7 +556,7 @@
         }
     }
 
-    // 👑 核心：淘汰賽名次強制鎖定邏輯
+    // 核心排名邏輯
     function updateLeaderboard() {
         let rankScores = new Map();
         
@@ -546,7 +598,7 @@
         });
     }
 
-    // ================== 🚨 新增：輪流戰計算邏輯 ==================
+    // ================== 輪流戰邏輯 ==================
     function initRoundRobin() {
         rrMatches = [];
         for (let i = 0; i < players.length; i++) { for (let j = i+1; j < players.length; j++) rrMatches.push({ p1: players[i], p2: players[j] }); }
@@ -568,7 +620,6 @@
         updateLeaderboard();
     }
 
-    // 🏆 這是修復輪流戰按鈕失效的核心函式
     function submitRRResult() {
         const s1 = parseInt(document.getElementById('p1-score-input').value); 
         const s2 = parseInt(document.getElementById('p2-score-input').value);
@@ -593,7 +644,7 @@
         loadRRMatch();
     }
 
-    // ================== 截圖下載 ==================
+    // ================== 手機截圖防壓縮黑科技 ==================
     function downloadTournamentImage() {
         const target = document.getElementById('capture-area');
         const sCanvas = document.getElementById('single-wing-canvas');
@@ -602,17 +653,23 @@
         const osX = window.scrollX; const osY = window.scrollY;
         const ow = target.style.maxWidth; const oof = sCanvas.style.overflowX; const cDisp = ctrl.style.display;
         
-        ctrl.style.display = 'none'; target.style.maxWidth = 'none'; sCanvas.style.overflowX = 'visible';
+        // 拍照前強迫網頁展開到電腦版的超大尺寸
+        ctrl.style.display = 'none'; 
+        target.style.maxWidth = 'none'; 
+        target.style.width = '1400px'; 
+        sCanvas.style.overflowX = 'visible';
         window.scrollTo(0, 0);
         
-        html2canvas(target, { backgroundColor: '#0f172a', scale: 2, logging: false, useCORS: true, width: target.scrollWidth, height: target.scrollHeight, windowWidth: target.scrollWidth, windowHeight: target.scrollHeight, x:0, y:0 })
-        .then(canvas => {
-            target.style.maxWidth = ow; sCanvas.style.overflowX = oof; ctrl.style.display = cDisp; window.scrollTo(osX, osY);
-            let a = document.createElement('a'); a.download = `陀螺杯_賽事_${new Date().toISOString().slice(0,10)}.png`; a.href = canvas.toDataURL('image/png'); a.click();
-        }).catch(e => {
-            target.style.maxWidth = ow; sCanvas.style.overflowX = oof; ctrl.style.display = cDisp; window.scrollTo(osX, osY);
-            alert("截圖失敗！");
-        });
+        setTimeout(() => {
+            html2canvas(target, { backgroundColor: '#0f172a', scale: 2, logging: false, useCORS: true, width: 1400, height: target.scrollHeight, windowWidth: 1400, windowHeight: target.scrollHeight, x:0, y:0 })
+            .then(canvas => {
+                target.style.maxWidth = ow; target.style.width = 'auto'; sCanvas.style.overflowX = oof; ctrl.style.display = cDisp; window.scrollTo(osX, osY);
+                let a = document.createElement('a'); a.download = `陀螺杯_賽事_${new Date().toISOString().slice(0,10)}.png`; a.href = canvas.toDataURL('image/png'); a.click();
+            }).catch(e => {
+                target.style.maxWidth = ow; target.style.width = 'auto'; sCanvas.style.overflowX = oof; ctrl.style.display = cDisp; window.scrollTo(osX, osY);
+                alert("截圖失敗！");
+            });
+        }, 100); // 延遲 0.1 秒等畫面完全撐開
     }
 </script>
 </body>
