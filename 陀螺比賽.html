@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🏆 BEYBLADE X 大賽管理系統 v17.0</title>
+    <title>🏆 BEYBLADE X 大賽管理系統 v18.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -42,10 +42,19 @@
         ul { list-style: none; padding: 0; max-width: 500px; margin: 15px auto; max-height: 300px; overflow-y: auto; background: #0f172a; border-radius: 8px; border: 1px solid #2d3748; padding: 5px; }
         li { background: #1e293b; margin: 4px 0; padding: 8px 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); }
 
-        /* 置頂控制列 */
-        .fixed-control-panel { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1400px; z-index: 999; background: #0f172a; border: 3px solid var(--accent-orange); border-top: none; padding: 12px 25px; border-radius: 0 0 16px 16px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
-        .score-input { width: 65px; padding: 6px; font-size: 20px; text-align: center; background: #1e293b; color: #fff; border: 2px solid var(--border-color); border-radius: 8px; font-weight: bold; margin: 0 10px; }
-        .pad-top { padding-top: 80px; }
+        /* 👑 置頂控制列 (桌面版預設) */
+        .fixed-control-panel { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1400px; z-index: 999; background: #0f172a; border: 3px solid var(--accent-orange); border-top: none; padding: 15px 25px; border-radius: 0 0 16px 16px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* 桌面版舒適間距 */
+        .scoring-zone { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .match-label { font-weight: bold; color: var(--accent-orange); font-size: 18px; white-space: nowrap; }
+        .player-name-disp { font-size: 20px; font-weight: bold; color: #fff; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .vs-text { font-weight: bold; color: var(--text-muted); font-size: 16px; }
+        .score-input { width: 70px; padding: 8px; font-size: 22px; text-align: center; background: #1e293b; color: #fff; border: 2px solid var(--border-color); border-radius: 8px; font-weight: bold; }
+        .submit-btn { padding: 10px 24px; font-size: 16px; white-space: nowrap; }
+        .spacer { width: 100px; } /* 左側返回鍵的對稱配重塊 */
+        
+        .pad-top { padding-top: 90px; }
 
         /* 對戰方塊樣式 */
         .match-box { background: var(--match-bg); border: 1px solid #94a3b8; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 220px; position: relative; z-index: 2; }
@@ -100,15 +109,15 @@
         .tree-child-wrapper::after { content: ''; position: absolute; right: 0; top: 50%; width: 15px; border-top: var(--line-thick) solid var(--line-color); }
         .tree-parent { margin-left: 15px; position: relative; }
         .tree-parent::before { content: ''; position: absolute; left: -15px; top: 50%; width: 15px; border-top: var(--line-thick) solid var(--line-color); }
+
         .single-third-place { margin-left: 60px; padding-left: 40px; border-left: 2px dashed #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
-        /* 基本共用隱藏 / 表格 */
         .hidden { display: none !important; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #0f172a; border-radius: 8px; overflow: hidden; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); }
         th { background-color: #1e293b; color: var(--accent); }
 
-        /* ================== 👑 RWD 行動裝置自適應黑科技 ================== */
+        /* ================== 👑 RWD 手機版變形黑科技 ================== */
         @media (max-width: 768px) {
             body { padding: 10px; }
             h1 { font-size: 28px; }
@@ -118,44 +127,21 @@
             .control-group { width: 100%; border-left: none !important; padding-left: 0 !important; justify-content: space-between; }
             .control-group input { flex-grow: 1; margin-right: 10px; width: auto; }
             
-            /* 👑 懸浮計分板手機專用排版 (改為多列結構) */
-            .fixed-control-panel { 
-                flex-direction: column; 
-                padding: 10px !important; 
-                border-radius: 0 0 12px 12px !important; 
-            }
-            .fixed-control-panel > button.btn-secondary { 
-                align-self: flex-start; 
-                margin-bottom: 5px; 
-                padding: 8px 12px; 
-            }
-            #active-scoring-zone { 
-                flex-wrap: wrap; 
-                justify-content: center; 
-                width: 100%; 
-            }
-            #match-label { 
-                width: 100%; 
-                text-align: center; 
-                margin-bottom: 8px; 
-                margin-right: 0 !important; 
-                display: block; 
-            }
-            /* 讓輸入框和名字好點擊 */
-            #p1-name-disp, #p2-name-disp { max-width: 70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-            .score-input { width: 55px; height: 45px; font-size: 20px !important; padding: 5px !important; }
-            /* 送出按鈕拉到最大 */
-            #active-scoring-zone .btn-primary { 
-                width: 100%; 
-                margin-left: 0 !important; 
-                margin-top: 12px; 
-                padding: 15px !important; 
-                font-size: 18px; 
-            }
-            .fixed-control-panel > div:last-child { display: none; } /* 隱藏排版用配重塊 */
+            /* 計分板折疊成上下三層 */
+            .fixed-control-panel { flex-direction: column; padding: 12px 15px !important; border-radius: 0 0 12px 12px !important; }
+            .fixed-control-panel > button.btn-secondary { align-self: flex-start; margin-bottom: 5px; padding: 8px 12px; }
             
-            /* 因為計分板變高了，底下畫布要再往下退 */
-            .pad-top { padding-top: 180px; }
+            .scoring-zone { flex-wrap: wrap; gap: 10px; width: 100%; }
+            .match-label { width: 100%; text-align: center; margin-bottom: 2px; }
+            
+            .player-name-disp { max-width: 90px; font-size: 18px; }
+            .score-input { width: 60px; height: 45px; font-size: 22px !important; padding: 5px; }
+            
+            .submit-btn { width: 100%; margin-top: 8px; padding: 15px !important; font-size: 18px; }
+            .spacer { display: none; }
+            
+            /* 底下畫布再往下退，防遮擋 */
+            .pad-top { padding-top: 190px; }
             
             /* 排行榜支援左右滑動 */
             #leaderboard-table { display: block; overflow-x: auto; white-space: nowrap; }
@@ -168,7 +154,7 @@
     <div id="main-header" class="nav-bar">
         <div>
             <h1>BEYBLADE X</h1>
-            <div class="subtitle">ベイブレードエックス 賽事系統 v17.0</div>
+            <div class="subtitle">ベイブレードエックス 賽事系統 v18.0</div>
         </div>
     </div>
 
@@ -205,20 +191,20 @@
     <div id="fixed-control" class="fixed-control-panel hidden" data-html2canvas-ignore>
         <button class="btn-secondary" onclick="backToMenu()">⬅ 返回選單</button>
         
-        <div id="active-scoring-zone" style="flex-grow:1; text-align:center; display:flex; justify-content:center; align-items:center;">
-            <span id="match-label">【當前對戰】</span>
-            <span id="p1-name-disp" style="font-size: 18px; font-weight: bold; color:#fff;">-</span>
+        <div id="active-scoring-zone" class="scoring-zone">
+            <span id="match-label" class="match-label">【當前對戰】</span>
+            <span id="p1-name-disp" class="player-name-disp">-</span>
             <input type="number" id="p1-score-input" class="score-input" value="0" min="0">
-            <span style="font-weight: bold; color: var(--text-muted); margin: 0 5px;">VS</span>
+            <span class="vs-text">VS</span>
             <input type="number" id="p2-score-input" class="score-input" value="0" min="0">
-            <span id="p2-name-disp" style="font-size: 18px; font-weight: bold; color:#fff;">-</span>
-            <button class="btn-primary" onclick="submitGlobalResult()">確認比分</button>
+            <span id="p2-name-disp" class="player-name-disp">-</span>
+            <button class="btn-primary submit-btn" onclick="submitGlobalResult()">確認比分</button>
         </div>
         
         <div id="finished-zone" class="hidden" style="flex-grow:1; text-align:center;">
             <span style="color:var(--accent); font-weight:bold; font-size:18px;">🎉 全賽程結束！請查看下方結算與下載海報！</span>
         </div>
-        <div style="width: 90px;"></div> 
+        <div class="spacer"></div> 
     </div>
 
     <div id="arena-section" class="section hidden pad-top">
@@ -283,6 +269,7 @@
 </div>
 
 <script>
+    // --- 系統資料 ---
     let players = [];
     let currentMode = '';
     
@@ -452,7 +439,7 @@
         `;
     }
 
-    // ================== 雙翼模式 ==================
+    // ================== 模式一：雙翼對稱 ==================
     function initDoubleWing() {
         let shuffled = [...players].sort(()=>Math.random()-0.5);
         let byesCount = 8 - players.length; 
@@ -486,7 +473,7 @@
         document.getElementById('pod-4').innerText = m8.loser ? m8.loser.name : '-';
     }
 
-    // ================== 單翼模式 ==================
+    // ================== 模式二：單翼無限樹狀 ==================
     function initSingleWing() {
         let np = Math.pow(2, Math.ceil(Math.log2(players.length)));
         let numByes = np - players.length; 
