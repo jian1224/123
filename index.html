@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google-site-verification" content="MmdgKjiGkh2kaJpG8hJqVp4lptqJK7gdpAF1c1JbhFc" />
     
-    <title>🏆 BEYBLADE X 大賽管理系統 v19.0</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>🏆 BEYBLADE X 大賽管理系統 v21.0</title>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js](https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js)"></script>
     
     <style>
         :root {
@@ -32,8 +32,7 @@
         
         input[type="text"], input[type="number"], select { padding: 12px 16px; background: #0f172a; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         button { padding: 11px 22px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; } /* 禁用按鈕的樣式 */
-        
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
         .btn-primary { background: var(--accent); color: #000; }
         .btn-primary:hover:not(:disabled) { background: #d9f99d; }
         .btn-cyan { background: #38bdf8; color: #000; }
@@ -49,14 +48,14 @@
         /* 置頂控制列 */
         .fixed-control-panel { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1400px; z-index: 999; background: #0f172a; border: 3px solid var(--accent-orange); border-top: none; padding: 15px 25px; border-radius: 0 0 16px 16px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
         
-        .top-nav-btns { display: flex; gap: 10px; width: 220px; } /* 排版配重 */
+        .top-nav-btns { display: flex; gap: 10px; width: 220px; }
         .scoring-zone { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 20px; }
         .match-label { font-weight: bold; color: var(--accent-orange); font-size: 18px; white-space: nowrap; }
         .player-name-disp { font-size: 20px; font-weight: bold; color: #fff; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .vs-text { font-weight: bold; color: var(--text-muted); font-size: 16px; }
         .score-input { width: 70px; padding: 8px; font-size: 22px; text-align: center; background: #1e293b; color: #fff; border: 2px solid var(--border-color); border-radius: 8px; font-weight: bold; }
         .submit-btn { padding: 10px 24px; font-size: 16px; white-space: nowrap; }
-        .spacer { width: 220px; } /* 對稱配重塊，確保中間置中 */
+        .spacer { width: 220px; }
         
         .pad-top { padding-top: 90px; }
 
@@ -121,7 +120,7 @@
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); }
         th { background-color: #1e293b; color: var(--accent); }
 
-        /* 👑 RWD 手機版變形黑科技 */
+        /* RWD 手機版變形黑科技 */
         @media (max-width: 768px) {
             body { padding: 10px; }
             h1 { font-size: 28px; }
@@ -157,7 +156,7 @@
     <div id="main-header" class="nav-bar">
         <div>
             <h1>BEYBLADE X</h1>
-            <div class="subtitle">ベイブレードエックス 賽事系統 v19.0</div>
+            <div class="subtitle">ベイブレードエックス 賽事系統 數據優化版</div>
         </div>
     </div>
 
@@ -183,9 +182,9 @@
         
         <div style="text-align: center; margin-top: 20px; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
             <select id="tournamentMode">
-                <option value="elim-single">單翼淘汰賽 (緊密樹狀圖，不限人數)</option>
-                <option value="elim-double">雙翼淘汰賽 (完美對稱，最多 8 人)</option>
-                <option value="round-robin">輪流戰 (全循環積分制)</option>
+                <option value="elim-single">單翼淘汰賽 (不限人數)</option>
+                <option value="elim-double">雙翼淘汰賽 (最多 8 人)</option>
+                <option value="round-robin">循環戰 (全循環積分制)</option>
             </select>
             <button class="btn-success" onclick="startTournament()">正式產生賽事 ➔</button>
         </div>
@@ -193,8 +192,8 @@
 
     <div id="fixed-control" class="fixed-control-panel hidden" data-html2canvas-ignore>
         <div class="top-nav-btns">
-            <button class="btn-secondary" style="padding: 6px 14px; font-size: 13px;" onclick="backToMenu()">⬅ 返回選單</button>
-            <button class="btn-danger" id="undo-btn" style="padding: 6px 14px; font-size: 13px;" onclick="undoLastMatch()" disabled>↶ 上一步</button>
+            <button class="btn-secondary" onclick="backToMenu()">⬅ 返回選單</button>
+            <button class="btn-danger" id="undo-btn" onclick="undoLastMatch()" disabled>↶ 上一步</button>
         </div>
         
         <div id="active-scoring-zone" class="scoring-zone">
@@ -263,7 +262,7 @@
                     <th>負場</th>
                     <th>總得分</th>
                     <th>總失分</th>
-                    <th>平均每場失分</th>
+                    <th>失分率</th>
                 </tr>
             </thead>
             <tbody id="leaderboard-body"></tbody>
@@ -363,7 +362,7 @@
         }
     }
 
-    // ================== 👑 核心：狀態保存與時光機還原 ==================
+    // ================== 👑 狀態保存與時光機還原 ==================
     function saveState() {
         let state = {
             players: players.map(p => ({ name: p.name, wins: p.wins, losses: p.losses, scored: p.scored, lost: p.lost, played: p.played })),
@@ -399,7 +398,6 @@
         if (historyStack.length === 0) return alert("已經是最早的狀態了！");
         const state = historyStack.pop();
 
-        // 完美還原所有選手積分與戰績
         state.players.forEach(savedP => {
             let p = players.find(p => p.name === savedP.name);
             if (p) {
@@ -407,7 +405,6 @@
             }
         });
 
-        // 復原輪流戰狀態
         if (currentMode === 'round-robin') {
             rrCurrentIndex = state.rrCurrentIndex;
             state.rrMatches.forEach((savedM, i) => {
@@ -417,9 +414,7 @@
             document.getElementById('active-scoring-zone').classList.remove('hidden');
             document.getElementById('finished-zone').classList.add('hidden');
             loadRRMatch();
-        } 
-        // 復原淘汰賽樹狀圖狀態
-        else {
+        } else {
             state.matchesList.forEach((savedM, i) => {
                 let m = matchesList[i];
                 m.s1 = savedM.s1; m.s2 = savedM.s2; m.isPlayed = savedM.isPlayed;
@@ -436,16 +431,13 @@
                 thirdPlaceMatchNode.loser = getPlayerRef(state.thirdPlaceMatchNode.loser);
             }
             
-            // 強制開啟計分面板，關閉結算排行榜
             document.getElementById('active-scoring-zone').classList.remove('hidden');
             document.getElementById('finished-zone').classList.add('hidden');
             document.getElementById('leaderboard-section').classList.add('hidden');
             
-            // 重新導航到上一場比賽位置
             findNextActiveMatch(); 
         }
         
-        // 檢查如果退到頂了就反灰按鈕
         if (historyStack.length === 0) {
             document.getElementById('undo-btn').disabled = true;
             document.getElementById('undo-btn-finish').disabled = true;
@@ -519,7 +511,6 @@
         const s2 = parseInt(document.getElementById('p2-score-input').value);
         if (isNaN(s1) || isNaN(s2) || s1 === s2) return alert("請輸入有效且不平手的得分！");
 
-        // 👑 在送出前備份全狀態
         saveState();
 
         let m = currentActiveMatch;
@@ -537,7 +528,6 @@
         let s1Badge = node.seed1 ? `<div class="seed-box ${node.p1 && !node.p1.isBye ? '' : 'empty'}">${node.seed1}</div>` : '';
         let s2Badge = node.seed2 ? `<div class="seed-box ${node.p2 && !node.p2.isBye ? '' : 'empty'}">${node.seed2}</div>` : '';
         
-        // 嚴格比對名字防干擾
         let p1IsWinner = node.winner && node.p1 && node.winner.name === node.p1.name;
         let p2IsWinner = node.winner && node.p2 && node.winner.name === node.p2.name;
 
@@ -679,23 +669,30 @@
         let sorted = [...players].sort((a, b) => {
             if (currentMode === 'round-robin') {
                 if (b.wins !== a.wins) return b.wins - a.wins;
-                let aRate = a.played > 0 ? a.lost / a.played : 0;
-                let bRate = b.played > 0 ? b.lost / b.played : 0;
+                let aTotal = a.scored + a.lost;
+                let bTotal = b.scored + b.lost;
+                let aRate = aTotal > 0 ? a.lost / aTotal : 0;
+                let bRate = bTotal > 0 ? b.lost / bTotal : 0;
                 return aRate - bRate;
             } else {
                 let scoreA = rankScores.get(a.name) || 0;
                 let scoreB = rankScores.get(b.name) || 0;
                 if (scoreB !== scoreA) return scoreB - scoreA;
-                let aRate = a.played > 0 ? a.lost / a.played : 0;
-                let bRate = b.played > 0 ? b.lost / b.played : 0;
+                
+                let aTotal = a.scored + a.lost;
+                let bTotal = b.scored + b.lost;
+                let aRate = aTotal > 0 ? a.lost / aTotal : 0;
+                let bRate = bTotal > 0 ? b.lost / bTotal : 0;
                 return aRate - bRate;
             }
         });
 
         const tbody = document.getElementById('leaderboard-body'); tbody.innerHTML = '';
         sorted.forEach((p, i) => {
-            const avgLost = p.played > 0 ? (p.lost / p.played).toFixed(2) : "0.00";
-            tbody.innerHTML += `<tr ${i===0&&p.played>0?'class="top-rank"':''}><td>${i+1}</td><td style="font-weight:bold;">${p.name}</td><td style="color:var(--accent); font-weight:bold;">${p.wins}</td><td style="color:#ef4444;">${p.losses}</td><td>${p.scored}</td><td>${p.lost}</td><td style="font-weight:bold; color:var(--accent-orange);">${avgLost}</td></tr>`;
+            let totalPts = p.scored + p.lost;
+            const lossRate = totalPts > 0 ? (p.lost / totalPts).toFixed(2) : "0.00";
+            const rowClass = (i === 0 && p.played > 0) ? 'class="top-rank"' : '';
+            tbody.innerHTML += `<tr ${rowClass}><td>${i+1}</td><td style="font-weight:bold;">${p.name}</td><td style="color:var(--accent); font-weight:bold;">${p.wins}</td><td style="color:#ef4444;">${p.losses}</td><td>${p.scored}</td><td>${p.lost}</td><td style="font-weight:bold; color:var(--accent-orange);">${lossRate}</td></tr>`;
         });
     }
 
@@ -728,26 +725,15 @@
         const s2 = parseInt(document.getElementById('p2-score-input').value);
         if (isNaN(s1) || isNaN(s2) || s1 === s2) return alert("比分無效或不能平手！");
         
-        // 👑 在送出前備份狀態
         saveState();
         
         const m = rrMatches[rrCurrentIndex];
-        m.p1.played++; 
-        m.p2.played++; 
-        m.p1.scored += s1; 
-        m.p2.scored += s2; 
-        m.p1.lost += s2; 
-        m.p2.lost += s1;
+        m.p1.played++; m.p2.played++; m.p1.scored += s1; m.p2.scored += s2; m.p1.lost += s2; m.p2.lost += s1;
         
-        if (s1 > s2) { 
-            m.p1.wins++; 
-            m.p2.losses++; 
-        } else { 
-            m.p2.wins++; 
-            m.p1.losses++; 
-        }
-        rrCurrentIndex++; 
-        loadRRMatch();
+        if (s1 > s2) { m.p1.wins++; m.p2.losses++; } 
+        else { m.p2.wins++; m.p1.losses++; }
+        
+        rrCurrentIndex++; loadRRMatch();
     }
 
     // ================== 手機截圖防壓縮黑科技 ==================
@@ -759,10 +745,7 @@
         const osX = window.scrollX; const osY = window.scrollY;
         const ow = target.style.maxWidth; const oof = sCanvas.style.overflowX; const cDisp = ctrl.style.display;
         
-        ctrl.style.display = 'none'; 
-        target.style.maxWidth = 'none'; 
-        target.style.width = '1400px'; 
-        sCanvas.style.overflowX = 'visible';
+        ctrl.style.display = 'none'; target.style.maxWidth = 'none'; target.style.width = '1400px'; sCanvas.style.overflowX = 'visible';
         window.scrollTo(0, 0);
         
         setTimeout(() => {
