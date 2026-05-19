@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google-site-verification" content="MmdgKjiGkh2kaJpG8hJqVp4lptqJK7gdpAF1c1JbhFc" />
     
-    <title>🏆 BEYBLADE X 大賽管理系統 v18.0</title>
+    <title>🏆 BEYBLADE X 大賽管理系統 v19.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -32,8 +32,10 @@
         
         input[type="text"], input[type="number"], select { padding: 12px 16px; background: #0f172a; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         button { padding: 11px 22px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; } /* 禁用按鈕的樣式 */
+        
         .btn-primary { background: var(--accent); color: #000; }
-        .btn-primary:hover { background: #d9f99d; }
+        .btn-primary:hover:not(:disabled) { background: #d9f99d; }
         .btn-cyan { background: #38bdf8; color: #000; }
         .btn-secondary { background: #475569; color: white; }
         .btn-danger { background: #ef4444; color: white; }
@@ -44,17 +46,17 @@
         ul { list-style: none; padding: 0; max-width: 500px; margin: 15px auto; max-height: 300px; overflow-y: auto; background: #0f172a; border-radius: 8px; border: 1px solid #2d3748; padding: 5px; }
         li { background: #1e293b; margin: 4px 0; padding: 8px 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); }
 
-        /* 👑 置頂控制列 (桌面版預設) */
+        /* 置頂控制列 */
         .fixed-control-panel { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1400px; z-index: 999; background: #0f172a; border: 3px solid var(--accent-orange); border-top: none; padding: 15px 25px; border-radius: 0 0 16px 16px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
         
-        /* 桌面版舒適間距 */
+        .top-nav-btns { display: flex; gap: 10px; width: 220px; } /* 排版配重 */
         .scoring-zone { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 20px; }
         .match-label { font-weight: bold; color: var(--accent-orange); font-size: 18px; white-space: nowrap; }
         .player-name-disp { font-size: 20px; font-weight: bold; color: #fff; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .vs-text { font-weight: bold; color: var(--text-muted); font-size: 16px; }
         .score-input { width: 70px; padding: 8px; font-size: 22px; text-align: center; background: #1e293b; color: #fff; border: 2px solid var(--border-color); border-radius: 8px; font-weight: bold; }
         .submit-btn { padding: 10px 24px; font-size: 16px; white-space: nowrap; }
-        .spacer { width: 100px; } /* 左側返回鍵的對稱配重塊 */
+        .spacer { width: 220px; } /* 對稱配重塊，確保中間置中 */
         
         .pad-top { padding-top: 90px; }
 
@@ -119,19 +121,18 @@
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); }
         th { background-color: #1e293b; color: var(--accent); }
 
-        /* ================== 👑 RWD 手機版變形黑科技 ================== */
+        /* 👑 RWD 手機版變形黑科技 */
         @media (max-width: 768px) {
             body { padding: 10px; }
             h1 { font-size: 28px; }
             
-            /* 設定名單區塊改為直向堆疊 */
             .setup-control-bar { flex-direction: column; align-items: stretch; gap: 15px; }
             .control-group { width: 100%; border-left: none !important; padding-left: 0 !important; justify-content: space-between; }
             .control-group input { flex-grow: 1; margin-right: 10px; width: auto; }
             
-            /* 計分板折疊成上下三層 */
             .fixed-control-panel { flex-direction: column; padding: 12px 15px !important; border-radius: 0 0 12px 12px !important; }
-            .fixed-control-panel > button.btn-secondary { align-self: flex-start; margin-bottom: 5px; padding: 8px 12px; }
+            .top-nav-btns { width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+            .top-nav-btns button { flex: 1; padding: 10px !important; font-size: 14px !important; margin: 0; }
             
             .scoring-zone { flex-wrap: wrap; gap: 10px; width: 100%; }
             .match-label { width: 100%; text-align: center; margin-bottom: 2px; }
@@ -142,10 +143,10 @@
             .submit-btn { width: 100%; margin-top: 8px; padding: 15px !important; font-size: 18px; }
             .spacer { display: none; }
             
-            /* 底下畫布再往下退，防遮擋 */
-            .pad-top { padding-top: 190px; }
-            
-            /* 排行榜支援左右滑動 */
+            #finished-zone { flex-direction: column; gap: 10px; padding-top: 5px; }
+            #undo-btn-finish { width: 100%; margin: 0 !important; padding: 15px !important; font-size: 16px !important; }
+
+            .pad-top { padding-top: 210px; }
             #leaderboard-table { display: block; overflow-x: auto; white-space: nowrap; }
         }
     </style>
@@ -156,7 +157,7 @@
     <div id="main-header" class="nav-bar">
         <div>
             <h1>BEYBLADE X</h1>
-            <div class="subtitle">ベイブレードエックス 賽事系統 v18.0</div>
+            <div class="subtitle">ベイブレードエックス 賽事系統 v19.0</div>
         </div>
     </div>
 
@@ -191,20 +192,24 @@
     </div>
 
     <div id="fixed-control" class="fixed-control-panel hidden" data-html2canvas-ignore>
-        <button class="btn-secondary" onclick="backToMenu()">⬅ 返回選單</button>
+        <div class="top-nav-btns">
+            <button class="btn-secondary" style="padding: 6px 14px; font-size: 13px;" onclick="backToMenu()">⬅ 返回選單</button>
+            <button class="btn-danger" id="undo-btn" style="padding: 6px 14px; font-size: 13px;" onclick="undoLastMatch()" disabled>↶ 上一步</button>
+        </div>
         
         <div id="active-scoring-zone" class="scoring-zone">
             <span id="match-label" class="match-label">【當前對戰】</span>
             <span id="p1-name-disp" class="player-name-disp">-</span>
-            <input type="number" id="p1-score-input" class="score-input" value="0" min="0">
+            <input type="number" id="p1-score-input" class="score-input" value="0" min="0" onfocus="this.select()">
             <span class="vs-text">VS</span>
-            <input type="number" id="p2-score-input" class="score-input" value="0" min="0">
+            <input type="number" id="p2-score-input" class="score-input" value="0" min="0" onfocus="this.select()">
             <span id="p2-name-disp" class="player-name-disp">-</span>
             <button class="btn-primary submit-btn" onclick="submitGlobalResult()">確認比分</button>
         </div>
         
-        <div id="finished-zone" class="hidden" style="flex-grow:1; text-align:center;">
+        <div id="finished-zone" class="hidden" style="flex-grow:1; text-align:center; display:flex; justify-content:center; align-items:center; gap: 15px;">
             <span style="color:var(--accent); font-weight:bold; font-size:18px;">🎉 全賽程結束！請查看下方結算與下載海報！</span>
+            <button class="btn-danger" id="undo-btn-finish" style="padding: 6px 14px; font-size: 14px;" onclick="undoLastMatch()" disabled>↶ 修改上一場</button>
         </div>
         <div class="spacer"></div> 
     </div>
@@ -283,6 +288,9 @@
     let rrMatches = [];
     let rrCurrentIndex = 0;
 
+    // 👑 歷史紀錄堆疊 (時光機系統)
+    let historyStack = [];
+
     function addManualPlayer() {
         const input = document.getElementById('manualInput');
         const name = input.value.trim();
@@ -324,6 +332,11 @@
 
         players.forEach(p => { p.wins=0; p.losses=0; p.scored=0; p.lost=0; p.played=0; });
         matchesList = []; thirdPlaceMatchNode = null; currentActiveMatch = null;
+        
+        // 重置時光機
+        historyStack = [];
+        document.getElementById('undo-btn').disabled = true;
+        document.getElementById('undo-btn-finish').disabled = true;
 
         document.getElementById('setup-section').classList.add('hidden');
         document.getElementById('main-header').classList.add('hidden');
@@ -349,6 +362,97 @@
             initSingleWing();
         }
     }
+
+    // ================== 👑 核心：狀態保存與時光機還原 ==================
+    function saveState() {
+        let state = {
+            players: players.map(p => ({ name: p.name, wins: p.wins, losses: p.losses, scored: p.scored, lost: p.lost, played: p.played })),
+            rrCurrentIndex: rrCurrentIndex,
+            rrMatches: rrMatches.map(m => ({ s1: m.s1, s2: m.s2 })),
+            matchesList: matchesList.map(m => ({
+                id: m.id, s1: m.s1, s2: m.s2, isPlayed: m.isPlayed,
+                p1: m.p1 ? {name: m.p1.name, isBye: m.p1.isBye} : null,
+                p2: m.p2 ? {name: m.p2.name, isBye: m.p2.isBye} : null,
+                winner: m.winner ? {name: m.winner.name, isBye: m.winner.isBye} : null,
+                loser: m.loser ? {name: m.loser.name, isBye: m.loser.isBye} : null
+            })),
+            thirdPlaceMatchNode: thirdPlaceMatchNode ? {
+                s1: thirdPlaceMatchNode.s1, s2: thirdPlaceMatchNode.s2, isPlayed: thirdPlaceMatchNode.isPlayed,
+                p1: thirdPlaceMatchNode.p1 ? {name: thirdPlaceMatchNode.p1.name, isBye: thirdPlaceMatchNode.p1.isBye} : null,
+                p2: thirdPlaceMatchNode.p2 ? {name: thirdPlaceMatchNode.p2.name, isBye: thirdPlaceMatchNode.p2.isBye} : null,
+                winner: thirdPlaceMatchNode.winner ? {name: thirdPlaceMatchNode.winner.name, isBye: thirdPlaceMatchNode.winner.isBye} : null,
+                loser: thirdPlaceMatchNode.loser ? {name: thirdPlaceMatchNode.loser.name, isBye: thirdPlaceMatchNode.loser.isBye} : null
+            } : null
+        };
+        historyStack.push(state);
+        document.getElementById('undo-btn').disabled = false;
+        document.getElementById('undo-btn-finish').disabled = false;
+    }
+
+    function getPlayerRef(savedP) {
+        if (!savedP) return null;
+        if (savedP.isBye) return { name: savedP.name, isBye: true };
+        return players.find(p => p.name === savedP.name) || null;
+    }
+
+    function undoLastMatch() {
+        if (historyStack.length === 0) return alert("已經是最早的狀態了！");
+        const state = historyStack.pop();
+
+        // 完美還原所有選手積分與戰績
+        state.players.forEach(savedP => {
+            let p = players.find(p => p.name === savedP.name);
+            if (p) {
+                p.wins = savedP.wins; p.losses = savedP.losses; p.scored = savedP.scored; p.lost = savedP.lost; p.played = savedP.played;
+            }
+        });
+
+        // 復原輪流戰狀態
+        if (currentMode === 'round-robin') {
+            rrCurrentIndex = state.rrCurrentIndex;
+            state.rrMatches.forEach((savedM, i) => {
+                rrMatches[i].s1 = savedM.s1;
+                rrMatches[i].s2 = savedM.s2;
+            });
+            document.getElementById('active-scoring-zone').classList.remove('hidden');
+            document.getElementById('finished-zone').classList.add('hidden');
+            loadRRMatch();
+        } 
+        // 復原淘汰賽樹狀圖狀態
+        else {
+            state.matchesList.forEach((savedM, i) => {
+                let m = matchesList[i];
+                m.s1 = savedM.s1; m.s2 = savedM.s2; m.isPlayed = savedM.isPlayed;
+                m.p1 = getPlayerRef(savedM.p1); m.p2 = getPlayerRef(savedM.p2);
+                m.winner = getPlayerRef(savedM.winner); m.loser = getPlayerRef(savedM.loser);
+            });
+            if (thirdPlaceMatchNode && state.thirdPlaceMatchNode) {
+                thirdPlaceMatchNode.s1 = state.thirdPlaceMatchNode.s1;
+                thirdPlaceMatchNode.s2 = state.thirdPlaceMatchNode.s2;
+                thirdPlaceMatchNode.isPlayed = state.thirdPlaceMatchNode.isPlayed;
+                thirdPlaceMatchNode.p1 = getPlayerRef(state.thirdPlaceMatchNode.p1);
+                thirdPlaceMatchNode.p2 = getPlayerRef(state.thirdPlaceMatchNode.p2);
+                thirdPlaceMatchNode.winner = getPlayerRef(state.thirdPlaceMatchNode.winner);
+                thirdPlaceMatchNode.loser = getPlayerRef(state.thirdPlaceMatchNode.loser);
+            }
+            
+            // 強制開啟計分面板，關閉結算排行榜
+            document.getElementById('active-scoring-zone').classList.remove('hidden');
+            document.getElementById('finished-zone').classList.add('hidden');
+            document.getElementById('leaderboard-section').classList.add('hidden');
+            
+            // 重新導航到上一場比賽位置
+            findNextActiveMatch(); 
+        }
+        
+        // 檢查如果退到頂了就反灰按鈕
+        if (historyStack.length === 0) {
+            document.getElementById('undo-btn').disabled = true;
+            document.getElementById('undo-btn-finish').disabled = true;
+        }
+    }
+
+    // =========================================================
 
     function createMatchNode(id, p1, p2) {
         let node = { id: id, p1: p1, p2: p2, s1: null, s2: null, winner: null, loser: null, isPlayed: false, nextNode: null, prevNodes: [], isThird: false };
@@ -404,6 +508,7 @@
             document.getElementById('leaderboard-section').classList.remove('hidden');
             if (currentMode === 'elim-double') fillDoublePodium();
             updateLeaderboard();
+            setTimeout(()=>{ window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }, 100);
         }
     }
 
@@ -413,6 +518,9 @@
         const s1 = parseInt(document.getElementById('p1-score-input').value);
         const s2 = parseInt(document.getElementById('p2-score-input').value);
         if (isNaN(s1) || isNaN(s2) || s1 === s2) return alert("請輸入有效且不平手的得分！");
+
+        // 👑 在送出前備份全狀態
+        saveState();
 
         let m = currentActiveMatch;
         m.s1 = s1; m.s2 = s2; m.isPlayed = true;
@@ -428,12 +536,17 @@
         if(!node) return '';
         let s1Badge = node.seed1 ? `<div class="seed-box ${node.p1 && !node.p1.isBye ? '' : 'empty'}">${node.seed1}</div>` : '';
         let s2Badge = node.seed2 ? `<div class="seed-box ${node.p2 && !node.p2.isBye ? '' : 'empty'}">${node.seed2}</div>` : '';
+        
+        // 嚴格比對名字防干擾
+        let p1IsWinner = node.winner && node.p1 && node.winner.name === node.p1.name;
+        let p2IsWinner = node.winner && node.p2 && node.winner.name === node.p2.name;
+
         return `
             <div id="mb-${node.id}" class="match-box" style="width:${widthStr};">
-                <div class="player-row ${node.winner===node.p1 ? 'winner':''} ${node.p1&&node.p1.isBye ? 'bye':''}">
+                <div class="player-row ${p1IsWinner ? 'winner':''} ${node.p1&&node.p1.isBye ? 'bye':''}">
                     ${s1Badge}<div class="player-name" style="${isCenter?'text-align:center;':''}">${node.p1?node.p1.name:'等待晉級...'}</div><div class="player-score">${node.s1!==null?node.s1:''}</div>
                 </div>
-                <div class="player-row ${node.winner===node.p2 ? 'winner':''} ${node.p2&&node.p2.isBye ? 'bye':''}">
+                <div class="player-row ${p2IsWinner ? 'winner':''} ${node.p2&&node.p2.isBye ? 'bye':''}">
                     ${s2Badge}<div class="player-name" style="${isCenter?'text-align:center;':''}">${node.p2?node.p2.name:'等待晉級...'}</div><div class="player-score">${node.s2!==null?node.s2:''}</div>
                 </div>
             </div>
@@ -597,7 +710,9 @@
         if (rrCurrentIndex >= rrMatches.length) {
             document.getElementById('active-scoring-zone').classList.add('hidden');
             document.getElementById('finished-zone').classList.remove('hidden');
-            updateLeaderboard(); return;
+            updateLeaderboard(); 
+            setTimeout(()=>{ window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }, 100);
+            return;
         }
         const m = rrMatches[rrCurrentIndex];
         document.getElementById('match-label').innerText = `輪流戰 ${rrCurrentIndex + 1}/${rrMatches.length}`;
@@ -612,6 +727,9 @@
         const s1 = parseInt(document.getElementById('p1-score-input').value); 
         const s2 = parseInt(document.getElementById('p2-score-input').value);
         if (isNaN(s1) || isNaN(s2) || s1 === s2) return alert("比分無效或不能平手！");
+        
+        // 👑 在送出前備份狀態
+        saveState();
         
         const m = rrMatches[rrCurrentIndex];
         m.p1.played++; 
@@ -641,7 +759,6 @@
         const osX = window.scrollX; const osY = window.scrollY;
         const ow = target.style.maxWidth; const oof = sCanvas.style.overflowX; const cDisp = ctrl.style.display;
         
-        // 拍照前強迫網頁展開到電腦版的超大尺寸
         ctrl.style.display = 'none'; 
         target.style.maxWidth = 'none'; 
         target.style.width = '1400px'; 
@@ -657,7 +774,7 @@
                 target.style.maxWidth = ow; target.style.width = 'auto'; sCanvas.style.overflowX = oof; ctrl.style.display = cDisp; window.scrollTo(osX, osY);
                 alert("截圖失敗！");
             });
-        }, 100); // 延遲 0.1 秒等畫面完全撐開
+        }, 100); 
     }
 </script>
 </body>
