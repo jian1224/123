@@ -1,6 +1,3 @@
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -10,7 +7,6 @@
 <title>BEYBLADE X 大賽管理系統</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<!-- Firebase SDK (modular v10) -->
 <script type="module">
 import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInAnonymously,
@@ -178,9 +174,6 @@ th{background:var(--card);color:var(--green);}
 </head>
 <body>
 
-<!-- ════════════════════════════════════════
-     GATE (入口畫面)
-════════════════════════════════════════ -->
 <div id="gate">
   <div style="text-align:center">
     <h1>⚡ BEYBLADE X</h1>
@@ -206,12 +199,8 @@ th{background:var(--card);color:var(--green);}
   </div>
 </div>
 
-<!-- 觀眾提示條 -->
 <div id="veil">👁️ 觀看模式 — 畫面即時同步中，僅供查看</div>
 
-<!-- ════════════════════════════════════════
-     MAIN APP
-════════════════════════════════════════ -->
 <div class="wrap" id="app">
 
   <div id="hdr">
@@ -219,7 +208,6 @@ th{background:var(--card);color:var(--green);}
     <div class="sub">ベイブレードエックス 賽事系統</div>
   </div>
 
-  <!-- 狀態列 -->
   <div id="sbar">
     <div class="sdot" id="sdot"></div>
     <span id="stxt" style="flex:1;color:var(--muted)">未連線</span>
@@ -228,7 +216,6 @@ th{background:var(--card);color:var(--green);}
     <button class="bs" id="leavebtn" style="padding:5px 12px;font-size:12px;margin-left:10px" onclick="leaveRoom()">離開房間</button>
   </div>
 
-  <!-- 1. 選手設定 -->
   <div id="setup" class="sec">
     <h2>1. 參賽選手設定</h2>
     <div class="ctrl-bar">
@@ -258,7 +245,6 @@ th{background:var(--card);color:var(--green);}
     </div>
   </div>
 
-  <!-- 計分固定面板 -->
   <div id="fpanel" class="fpanel hidden" data-html2canvas-ignore>
     <div class="fnav">
       <button class="bs" onclick="backToMenu()">⬅ 返回選單</button>
@@ -280,9 +266,7 @@ th{background:var(--card);color:var(--green);}
     <div class="fspacer"></div>
   </div>
 
-  <!-- 賽程區域 -->
   <div id="arena" class="sec hidden padtop">
-    <!-- 雙翼 -->
     <div id="dcanvas" class="dcanvas hidden">
       <div class="wing lwing">
         <div class="col-o"><div id="b-m1"></div><div id="b-m2"></div></div>
@@ -312,13 +296,10 @@ th{background:var(--card);color:var(--green);}
       </div>
     </div>
 
-    <!-- 單翼 -->
     <div id="scanvas" class="scanvas hidden"></div>
-    <!-- 循環 -->
     <div id="rrcanvas" class="hidden"></div>
   </div>
 
-  <!-- 排行榜 -->
   <div id="lbsec" class="sec hidden">
     <h2>🏅 賽事戰績結算表</h2>
     <table><thead><tr>
@@ -330,16 +311,13 @@ th{background:var(--card);color:var(--green);}
     </div>
   </div>
 
-</div><!-- /wrap -->
-
-<script>
+</div><script>
 // ══════════════════════════════════════════════
-// Firebase 設定（內建，不顯示在畫面上）
+// Firebase 設定
 // ══════════════════════════════════════════════
 const FB_CFG = {
   apiKey:"AIzaSyCGM6nO_LqSQI3D3MRS9fbWGHrpCR42QzU",
   authDomain:"beyblade-x-4ff10.firebaseapp.com",
-  databaseURL:"https://beyblade-x-4ff10-default-rtdb.firebaseio.com",
   projectId:"beyblade-x-4ff10",
   storageBucket:"beyblade-x-4ff10.firebasestorage.app",
   messagingSenderId:"982144047140",
@@ -348,22 +326,21 @@ const FB_CFG = {
 };
 
 // ══════════════════════════════════════════════
-// 全域狀態
+// 全域狀態 (已修正預設 isJudge 避免邏輯判斷錯誤)
 // ══════════════════════════════════════════════
 let fbApp=null, fbAuth=null, fbDb=null;
-let roomId='', isJudge=false, unsub=null;
-let skipNext=false;          // 避免自己寫完又觸發監聽
-let lastPushTime=0;
+let roomId='', isJudge=true, unsub=null; 
+let skipNext=false;          
 let viewerObserver=null;
 
 let players=[];
 let mode='';
-let matches=[];              // 淘汰賽節點清單
-let root=null;               // 單翼根節點
-let thirdNode=null;          // 季軍賽節點
+let matches=[];              
+let root=null;               
+let thirdNode=null;          
 let activeMatch=null;
 let rrList=[], rrIdx=0;
-let history=[];              // 上一步 stack
+let history=[];              
 
 // ══════════════════════════════════════════════
 // GATE 邏輯
@@ -376,10 +353,6 @@ function pickRole(r){
   document.getElementById('pw-row').style.flexDirection='column';
   document.getElementById('pw-row').style.gap='8px';
 }
-// 預設顯示密碼列
-document.getElementById('pw-row').style.display='flex';
-document.getElementById('pw-row').style.flexDirection='column';
-document.getElementById('pw-row').style.gap='8px';
 
 async function enterRoom(){
   const errEl=document.getElementById('gerr');
@@ -391,7 +364,6 @@ async function enterRoom(){
   if(!room)return errEl.textContent='請輸入房間 ID！';
   if(isJudge&&!pw)return errEl.textContent='裁判組需輸入密碼！';
 
-  // 等待 Firebase SDK 載入
   if(!window.__FB_READY){
     loadEl.textContent='載入 SDK 中...';
     await new Promise(res=>window.addEventListener('fb-ready',res,{once:true}));
@@ -401,10 +373,7 @@ async function enterRoom(){
   try{
     const F=window.__FB;
 
-    // 初始化（每次 leaveRoom 後重建）
-    if(!fbApp){
-      fbApp=F.initializeApp(FB_CFG,'bey-'+Date.now());
-    }
+    if(!fbApp){ fbApp=F.initializeApp(FB_CFG,'bey-'+Date.now()); }
     fbAuth=F.getAuth(fbApp);
     fbDb=F.getFirestore(fbApp);
 
@@ -412,7 +381,6 @@ async function enterRoom(){
       const safe=room.replace(/[^a-zA-Z0-9]/g,'').toLowerCase()||'room';
       const email=`judge.${safe}@beyblade-x.com`;
       let judgeOk=false;
-      // 先嘗試登入
       try{
         await F.signInWithEmailAndPassword(fbAuth,email,pw);
         judgeOk=true;
@@ -420,7 +388,6 @@ async function enterRoom(){
         const NEW_USER=['auth/user-not-found','auth/invalid-credential',
                         'auth/invalid-login-credentials','auth/invalid-email'];
         if(NEW_USER.includes(e1.code)){
-          // 帳號不存在 → 嘗試建立
           try{
             await F.createUserWithEmailAndPassword(fbAuth,email,pw);
             judgeOk=true;
@@ -433,16 +400,12 @@ async function enterRoom(){
             }else{
               errEl.textContent='建立帳號失敗：'+e2.code;
             }
-            return; // ← 直接停止，不繼續
+            return; 
           }
         }else if(e1.code==='auth/wrong-password'){
-          loadEl.textContent='';
-          errEl.textContent='密碼錯誤！';
-          return;
+          loadEl.textContent=''; errEl.textContent='密碼錯誤！'; return;
         }else{
-          loadEl.textContent='';
-          errEl.textContent='登入失敗：'+e1.code;
-          return;
+          loadEl.textContent=''; errEl.textContent='登入失敗：'+e1.code; return;
         }
       }
       if(!judgeOk){ loadEl.textContent=''; errEl.textContent='裁判登入失敗，請重試。'; return; }
@@ -450,24 +413,18 @@ async function enterRoom(){
       await F.signInAnonymously(fbAuth);
     }
 
-    // 登入成功
     roomId=room;
     loadEl.textContent='';
     document.getElementById('gate').style.display='none';
 
-    // 更新狀態列
     document.getElementById('sdot').className='sdot '+(isJudge?'judge':'viewer');
     document.getElementById('stxt').textContent='房間：'+roomId;
     document.getElementById('srole').textContent=isJudge?'⚔️ 裁判組':'👁️ 觀眾';
     document.getElementById('srole').style.color=isJudge?'var(--orange)':'var(--green)';
 
-    // 觀眾：鎖定
     if(!isJudge) lockViewer();
-
-    // 開始監聽
     startListener();
 
-    // 裁判：嘗試恢復
     if(isJudge){
       const snap=await F.getDoc(F.doc(fbDb,'rooms',roomId));
       if(snap.exists()&&snap.data().gs){
@@ -493,29 +450,43 @@ function startListener(){
   const ref=F.doc(fbDb,'rooms',roomId);
   unsub=F.onSnapshot(ref,snap=>{
     if(!snap.exists())return;
-    // 裁判自己剛推送的那次跳過（避免回聲），觀眾永遠接收
-    if(isJudge&&skipNext){skipNext=false;return;}
-    skipNext=false;
+    if(skipNext){skipNext=false;return;}
     const d=snap.data();
     if(d&&d.gs) loadState(d.gs);
   });
 }
 
-async function push(){
-  if(!fbDb||!roomId||!isJudge)return;
-  const F=window.__FB;
-  const ts=Date.now();
-  lastPushTime=ts;
-  skipNext=true;
-  try{
-    await F.setDoc(F.doc(fbDb,'rooms',roomId),{gs:dumpState(),ts},{merge:true});
-    const el=document.getElementById('sync');
+// ══════════════════════════════════════════════
+// ⭐ 核心防呆與報錯區：確保資料能上傳 
+// ══════════════════════════════════════════════
+async function push() {
+  console.log("📡 [系統追蹤] 準備將資料同步至 Firebase...");
+  if (!fbDb || !roomId || !isJudge) {
+    console.warn("⚠️ [系統追蹤] 權限不足或未連線，取消上傳！", { db: !!fbDb, room: roomId, judge: isJudge });
+    return;
+  }
+  
+  const F = window.__FB;
+  skipNext = true;
+  
+  try {
+    const payload = { gs: dumpState() };
+    console.log("📦 [系統追蹤] 資料打包完畢，開始傳輸...");
+    
+    // 將資料寫入 Firestore
+    await F.setDoc(F.doc(fbDb, 'rooms', roomId), payload, { merge: true });
+    
+    console.log("✅ [系統追蹤] Firebase 接收成功！");
+    const el = document.getElementById('sync');
     el.classList.add('on');
     clearTimeout(el._t);
-    el._t=setTimeout(()=>el.classList.remove('on'),2000);
-  }catch(e){
-    console.error('push fail',e);
-    skipNext=false; // 失敗時重置，下次收到監聽才能正常更新
+    el._t = setTimeout(() => el.classList.remove('on'), 2000);
+    
+  } catch(e) {
+    // 💡 抓出上傳失敗的真正兇手！
+    console.error("🔥 [系統追蹤] 上傳失敗！", e);
+    alert("資料庫連線或寫入失敗！原因：\n" + (e.message || e.code) + "\n\n請檢查您的 Firebase 安全規則 (Rules) 是否有發布成功。");
+    skipNext = false;
   }
 }
 
@@ -525,21 +496,16 @@ function leaveRoom(){
   if(fbAuth){try{fbAuth.signOut();}catch(e){}}
   fbApp=null;fbAuth=null;fbDb=null;roomId='';
 
-  // 解鎖所有元素
   document.querySelectorAll('[data-vlocked]').forEach(el=>{
     el.disabled=false;el.removeAttribute('data-vlocked');
   });
   document.getElementById('veil').style.display='none';
 
-  // 重設狀態列
   document.getElementById('sdot').className='sdot';
   document.getElementById('stxt').textContent='未連線';
   document.getElementById('srole').textContent='';
 
-  // 回到設定畫面
   backToMenu();
-
-  // 顯示 gate
   document.getElementById('gate').style.display='flex';
 }
 
@@ -579,7 +545,7 @@ function dumpState(){
     third:dm(thirdNode),
     amid:activeMatch?activeMatch.id:null,
     rridx:rrIdx,
-    rrlist:rrList.map(m=>({p1:m.p1.name,p2:m.p2.name,s1:m.s1,s2:m.s2})),
+    rrlist:rrList.map(m=>({p1:m.p1.name,p2:m.p2.name,s1:m.s1!==null?m.s1:null,s2:m.s2!==null?m.s2:null})),
     hist:history.slice(-8)
   };
 }
@@ -610,7 +576,6 @@ function loadState(s){
     return;
   }
 
-  // 重建 match 節點
   matches=[];thirdNode=null;root=null;
   (s.matches||[]).forEach(sm=>{
     matches.push({id:sm.id,s1:sm.s1,s2:sm.s2,isPlayed:sm.played,isThird:sm.third,
@@ -643,19 +608,13 @@ function loadState(s){
     if(mode==='double')fillPodium();
   }else if(activeMatch){
     document.getElementById('fpanel').classList.remove('hidden');
+    document.getElementById('scorezone').classList.remove('hidden');
+    document.getElementById('finzone').classList.add('hidden');
+    document.getElementById('lbsec').classList.add('hidden');
     document.getElementById('flabel').textContent=activeMatch.isThird?'【季軍爭奪賽】':'【當前對戰】';
     document.getElementById('fp1').textContent=activeMatch.p1?activeMatch.p1.name:'-';
     document.getElementById('fp2').textContent=activeMatch.p2?activeMatch.p2.name:'-';
-    if(isJudge){
-      // 裁判：顯示計分輸入
-      document.getElementById('scorezone').classList.remove('hidden');
-      document.getElementById('finzone').classList.add('hidden');
-      document.getElementById('lbsec').classList.add('hidden');
-      document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
-    }else{
-      // 觀眾：只顯示比賽資訊，隱藏輸入框和按鈕
-      document.getElementById('fs1').closest('.fzone').querySelectorAll('input,button').forEach(el=>el.style.display='none');
-    }
+    document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
     setTimeout(()=>{
       const b=document.getElementById('b-'+activeMatch.id);
       if(b){b.classList.add('active');b.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});}
@@ -864,10 +823,7 @@ function renderMB(node,w='220px',center=false){
   const s2b=node.seed2?`<div class="seed ${node.p2&&!node.p2.isBye?'':'empty'}">${node.seed2}</div>`:'';
   const w1=node.winner&&node.p1&&node.winner.name===node.p1.name;
   const w2=node.winner&&node.p2&&node.winner.name===node.p2.name;
-  // 裁判可點擊任意場次（已完成的也可重新選）
-  const clickable=isJudge&&node.p1&&node.p2&&!node.p1.isBye&&!node.p2.isBye;
-  const clickAttr=clickable?`onclick="selectMatch('${node.id}')" style="width:${w};cursor:pointer"`:`style="width:${w}"`;
-  return`<div id="b-${node.id}" class="mb" ${clickAttr}>
+  return`<div id="b-${node.id}" class="mb" style="width:${w}">
     <div class="pr ${w1?'win':''} ${node.p1?.isBye?'bye':''}">
       ${s1b}<div class="pname" style="${center?'text-align:center':''}">${node.p1?node.p1.name:'等待晉級...'}</div>
       <div class="pscore">${node.s1!==null?node.s1:''}</div>
@@ -877,25 +833,6 @@ function renderMB(node,w='220px',center=false){
       <div class="pscore">${node.s2!==null?node.s2:''}</div>
     </div>
   </div>`;
-}
-
-// 裁判點擊場次 → 切換到該場
-function selectMatch(id){
-  if(!isJudge)return;
-  const node=matches.find(m=>m.id===id)||(thirdNode&&thirdNode.id===id?thirdNode:null);
-  if(!node||!node.p1||!node.p2||node.p1.isBye||node.p2.isBye)return;
-  activeMatch=node;
-  document.getElementById('scorezone').classList.remove('hidden');
-  document.getElementById('finzone').classList.add('hidden');
-  document.getElementById('fpanel').classList.remove('hidden');
-  document.getElementById('flabel').textContent=node.isThird?'【季軍爭奪賽】':(node.isPlayed?'【重新計分】':'【當前對戰】');
-  document.getElementById('fp1').textContent=node.p1.name;
-  document.getElementById('fp2').textContent=node.p2.name;
-  document.getElementById('fs1').value=node.s1!==null?node.s1:0;
-  document.getElementById('fs2').value=node.s2!==null?node.s2:0;
-  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('active'));
-  const b=document.getElementById('b-'+id);
-  if(b){b.classList.add('active');b.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});}
 }
 
 // ── 重繪賽程 ──
