@@ -400,7 +400,8 @@ async function enterRoom() {
         // 裁判：用 email/password 登入（固定 email = roomId@judge.beyblade）
         // 觀眾：匿名
         if (isJudge) {
-            const email = `${roomId}@judge.beyblade.local`;
+            const safeRoom = roomId.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'room';
+            const email = `judge.${safeRoom}@beyblade-x.com`;
             try {
                 await signInWithEmailAndPassword(fbAuth, email, pw);
             } catch(e) {
@@ -501,31 +502,44 @@ function leaveRoom() {
     if (unsubscribeListener) { unsubscribeListener(); unsubscribeListener = null; }
     if (fbAuth) fbAuth.signOut && fbAuth.signOut();
     fbApp = null; fbAuth = null; fbDb = null; currentRoom = '';
+    // 停止 MutationObserver
+    if (window._viewerObserver) { window._viewerObserver.disconnect(); window._viewerObserver = null; }
+    // 重新啟用所有被鎖定的元素
+    document.querySelectorAll('input[disabled], select[disabled], button[disabled]').forEach(el => {
+        el.disabled = false;
+    });
+    document.getElementById('viewer-lock-overlay').classList.remove('active');
     document.getElementById('firebase-gate').style.display = 'flex';
+    document.getElementById('firebase-gate').style.flexDirection = 'column';
+    document.getElementById('firebase-gate').style.alignItems = 'center';
+    document.getElementById('firebase-gate').style.justifyContent = 'center';
     document.getElementById('status-dot').className = 'status-dot';
     document.getElementById('status-text').textContent = '未連線';
     document.getElementById('status-role').textContent = '';
+    // 重置回設定畫面
+    document.getElementById('setup-section').classList.remove('hidden');
+    document.getElementById('main-header').classList.remove('hidden');
+    document.getElementById('fixed-control').classList.add('hidden');
+    document.getElementById('arena-section').classList.add('hidden');
+    document.getElementById('leaderboard-section').classList.add('hidden');
 }
 
 function applyViewerLock() {
     document.getElementById('viewer-lock-overlay').classList.add('active');
-    // 禁用所有輸入與按鈕（除了下載海報）
-    document.querySelectorAll('input, select, button').forEach(el => {
-        if (el.id === 'leave-room-btn') return;
+    const EXEMPT_IDS = new Set(['leave-room-btn']);
+    function lockEl(el) {
+        if (EXEMPT_IDS.has(el.id)) return;
         if (el.closest('[data-html2canvas-ignore]')) return;
-        if (el.onclick && el.onclick.toString().includes('downloadTournamentImage')) return;
         el.disabled = true;
-    });
+        el.setAttribute('data-viewer-locked', '1');
+    }
+    document.querySelectorAll('input, select, button').forEach(lockEl);
     // 持續監控新增元素
     const obs = new MutationObserver(() => {
-        document.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])').forEach(el => {
-            if (el.id === 'leave-room-btn') return;
-            if (el.closest('[data-html2canvas-ignore]')) return;
-            if (el.onclick && el.onclick.toString().includes('downloadTournamentImage')) return;
-            el.disabled = true;
-        });
+        document.querySelectorAll('input:not([data-viewer-locked]), select:not([data-viewer-locked]), button:not([data-viewer-locked])').forEach(lockEl);
     });
     obs.observe(document.body, { childList: true, subtree: true, attributes: false });
+    window._viewerObserver = obs;
 }
 
 // ============================================================
