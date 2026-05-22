@@ -170,10 +170,10 @@
             </div>
             <div class="control-group" style="border-left: 2px solid var(--border-color); padding-left: 15px;">
                 <input type="number" id="batchInput" placeholder="人數 (如: 64)" style="width: 100px;" min="2" max="128">
-                <button class="btn-cyan" onclick="addBatchPlayers()">⚡ 一鍵生成</button>
+                <button class="btn-cyan" onclick="addBatchPlayers()"> 一鍵生成</button>
             </div>
             <div class="control-group" style="border-left: 2px solid var(--border-color); padding-left: 15px;">
-                <button class="btn-danger" onclick="clearAllPlayers()">🗑️ 清空名單</button>
+                <button class="btn-danger" onclick="clearAllPlayers()"> 清空名單</button>
             </div>
         </div>
 
@@ -207,7 +207,7 @@
         </div>
         
         <div id="finished-zone" class="hidden" style="flex-grow:1; text-align:center; display:flex; justify-content:center; align-items:center; gap: 15px;">
-            <span style="color:var(--accent); font-weight:bold; font-size:18px;">🎉 全賽程結束！請查看下方結算與下載海報！</span>
+            <span style="color:var(--accent); font-weight:bold; font-size:18px;"> 全賽程結束！請查看下方結算與下載海報！</span>
             <button class="btn-danger" id="undo-btn-finish" style="padding: 6px 14px; font-size: 14px;" onclick="undoLastMatch()" disabled>↶ 修改上一場</button>
         </div>
         <div class="spacer"></div> 
@@ -252,7 +252,7 @@
     </div>
 
     <div id="leaderboard-section" class="section hidden">
-        <h2>🏅 賽事戰績結算表</h2>
+        <h2> 賽事戰績結算表</h2>
         <table id="leaderboard-table">
             <thead>
                 <tr>
@@ -298,7 +298,7 @@
     function addBatchPlayers() {
         const count = parseInt(document.getElementById('batchInput').value);
         if (isNaN(count) || count < 2) return alert("請輸入有效人數！");
-        if (count > 128) return alert("單次上限128人！");
+        if (count > 500) return alert("單次上限128人！");
         let maxId = 0;
         players.forEach(p => { let m = p.name.match(/^選手\s*(\d+)$/); if(m && parseInt(m[1])>maxId) maxId=parseInt(m[1]); });
         for (let i = 1; i <= count; i++) players.push(createPlayerObj(`選手 ${maxId + i}`));
