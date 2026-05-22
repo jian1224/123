@@ -10,14 +10,11 @@
 <!-- Firebase SDK (modular v10) -->
 <script type="module">
 import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInAnonymously,
-         signInWithEmailAndPassword,
-         createUserWithEmailAndPassword }             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInAnonymously }             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc,
          getDoc, onSnapshot }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
  
 window.__FB = { initializeApp, getAuth, signInAnonymously,
-                signInWithEmailAndPassword, createUserWithEmailAndPassword,
                 getFirestore, doc, setDoc, getDoc, onSnapshot };
 window.__FB_READY = true;
 window.dispatchEvent(new Event('fb-ready'));
@@ -181,7 +178,7 @@ th{background:var(--card);color:var(--green);}
 <div id="gate">
   <div style="text-align:center">
     <h1>⚡ BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v26.0</div>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v27.0</div>
   </div>
  
   <div class="gcard">
@@ -378,6 +375,12 @@ document.getElementById('pw-row').style.display='flex';
 document.getElementById('pw-row').style.flexDirection='column';
 document.getElementById('pw-row').style.gap='8px';
  
+// 簡單密碼 hash（SHA-256 via Web Crypto API）
+async function simpleHash(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+ 
 async function enterRoom(){
   const errEl=document.getElementById('gerr');
   const loadEl=document.getElementById('gload');
@@ -405,46 +408,34 @@ async function enterRoom(){
     fbAuth=F.getAuth(fbApp);
     fbDb=F.getFirestore(fbApp);
  
+    // 所有人都用匿名登入（不受 reCAPTCHA 影響）
+    await F.signInAnonymously(fbAuth);
+ 
+    // 裁判：用 Firestore 做密碼驗證
     if(isJudge){
-      const safe=room.replace(/[^a-zA-Z0-9]/g,'').toLowerCase()||'room';
-      const email=`judge.${safe}@beyblade-x.com`;
-      let judgeOk=false;
-      // 先嘗試登入
-      try{
-        await F.signInWithEmailAndPassword(fbAuth,email,pw);
-        judgeOk=true;
-      }catch(e1){
-        const NEW_USER=['auth/user-not-found','auth/invalid-credential',
-                        'auth/invalid-login-credentials','auth/invalid-email'];
-        if(NEW_USER.includes(e1.code)){
-          // 帳號不存在 → 嘗試建立
-          try{
-            await F.createUserWithEmailAndPassword(fbAuth,email,pw);
-            judgeOk=true;
-          }catch(e2){
-            loadEl.textContent='';
-            if(e2.code==='auth/email-already-in-use'){
-              errEl.textContent='密碼錯誤！此房間裁判密碼已設定，請輸入正確密碼。';
-            }else if(e2.code==='auth/weak-password'){
-              errEl.textContent='密碼至少需要 6 個字元！';
-            }else{
-              errEl.textContent='建立帳號失敗：'+e2.code;
-            }
-            return; // ← 直接停止，不繼續
-          }
-        }else if(e1.code==='auth/wrong-password'){
+      const metaRef=F.doc(fbDb,'rooms',room+'__meta');
+      let metaSnap;
+      try{ metaSnap=await F.getDoc(metaRef); }
+      catch(e){ loadEl.textContent=''; errEl.textContent='讀取房間資料失敗：'+e.message; return; }
+ 
+      // 簡單 hash（不需要加密強度，只是防止明文）
+      const pwHash=await simpleHash(pw);
+ 
+      if(!metaSnap.exists()){
+        // 第一次建立房間 → 寫入密碼 hash
+        try{
+          await F.setDoc(metaRef,{pwHash,created:Date.now()});
+        }catch(e){ loadEl.textContent=''; errEl.textContent='建立房間失敗：'+e.message; return; }
+      }else{
+        // 已有房間 → 比對密碼
+        const stored=metaSnap.data().pwHash;
+        if(stored!==pwHash){
           loadEl.textContent='';
-          errEl.textContent='密碼錯誤！';
-          return;
-        }else{
-          loadEl.textContent='';
-          errEl.textContent='登入失敗：'+e1.code;
+          errEl.textContent='密碼錯誤！此房間的裁判密碼已設定，請輸入正確密碼。';
+          if(fbAuth)try{fbAuth.signOut();}catch(e){}
           return;
         }
       }
-      if(!judgeOk){ loadEl.textContent=''; errEl.textContent='裁判登入失敗，請重試。'; return; }
-    }else{
-      await F.signInAnonymously(fbAuth);
     }
  
     // 登入成功
