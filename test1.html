@@ -178,7 +178,7 @@ th{background:var(--card);color:var(--green);}
 <div id="gate">
   <div style="text-align:center">
     <h1>⚡ BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v27.0</div>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v28.0</div>
   </div>
  
   <div class="gcard">
@@ -411,12 +411,31 @@ async function enterRoom(){
     // 所有人都用匿名登入（不受 reCAPTCHA 影響）
     await F.signInAnonymously(fbAuth);
  
+    // 等待 auth 狀態穩定後再操作 Firestore
+    await new Promise(res=>{
+      const unsub=fbAuth.onAuthStateChanged(user=>{
+        if(user){ unsub(); res(); }
+      });
+    });
+ 
     // 裁判：用 Firestore 做密碼驗證
     if(isJudge){
       const metaRef=F.doc(fbDb,'rooms',room+'__meta');
       let metaSnap;
-      try{ metaSnap=await F.getDoc(metaRef); }
-      catch(e){ loadEl.textContent=''; errEl.textContent='讀取房間資料失敗：'+e.message; return; }
+      // 重試最多 3 次，每次間隔 1 秒
+      for(let attempt=1;attempt<=3;attempt++){
+        try{
+          metaSnap=await F.getDoc(metaRef);
+          break; // 成功就跳出
+        }catch(e){
+          if(attempt===3){
+            loadEl.textContent='';
+            errEl.textContent='讀取房間資料失敗（請確認網路）：'+e.message;
+            return;
+          }
+          await new Promise(r=>setTimeout(r,1000));
+        }
+      }
  
       // 簡單 hash（不需要加密強度，只是防止明文）
       const pwHash=await simpleHash(pw);
