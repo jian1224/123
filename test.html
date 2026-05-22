@@ -1,1114 +1,1020 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="google-site-verification" content="MmdgKjiGkh2kaJpG8hJqVp4lptqJK7gdpAF1c1JbhFc" />
-    <title>BEYBLADE X 大賽管理系統 v22.0</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        window._fbModules = { initializeApp, getAuth, signInAnonymously, signInWithEmailAndPassword, onAuthStateChanged, getFirestore, doc, setDoc, onSnapshot, getDoc };
-    </script>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #bef264;
-            --accent-orange: #f97316;
-            --border-color: #334155;
-            --canvas-bg: #e2e8f0;
-            --match-bg: #ffffff;
-            --line-color: #94a3b8;
-            --line-thick: 2px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="google-site-verification" content="MmdgKjiGkh2kaJpG8hJqVp4lptqJK7gdpAF1c1JbhFc" />
+<title>BEYBLADE X 大賽管理系統</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-        body { font-family: 'Segoe UI', Microsoft JhengHei, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h1 { font-size: 38px; letter-spacing: 2px; margin: 0; color: var(--text-main); font-weight: 900; text-align: center; }
-        .subtitle { color: var(--text-muted); font-size: 14px; letter-spacing: 4px; margin-top: 5px; text-align: center; margin-bottom: 25px;}
-        h2 { color: var(--accent); border-left: 5px solid var(--accent); padding-left: 12px; font-size: 20px; margin: 15px 0; }
-        .section { margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+<!-- Firebase SDK (modular v10) -->
+<script type="module">
+import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInAnonymously,
+         signInWithEmailAndPassword,
+         createUserWithEmailAndPassword }             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc,
+         getDoc, onSnapshot }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        input[type="text"], input[type="number"], input[type="password"], select { padding: 12px 16px; background: #0f172a; color: #fff; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        button { padding: 11px 22px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .btn-primary { background: var(--accent); color: #000; }
-        .btn-primary:hover:not(:disabled) { background: #d9f99d; }
-        .btn-cyan { background: #38bdf8; color: #000; }
-        .btn-secondary { background: #475569; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-success { background: var(--accent-orange); color: white; width: 100%; font-size: 18px; padding: 14px; margin-top: 15px; }
+window.__FB = { initializeApp, getAuth, signInAnonymously,
+                signInWithEmailAndPassword, createUserWithEmailAndPassword,
+                getFirestore, doc, setDoc, getDoc, onSnapshot };
+window.__FB_READY = true;
+window.dispatchEvent(new Event('fb-ready'));
+</script>
 
-        /* ===== Firebase 連線入口畫面 ===== */
-        #firebase-gate {
-            position: fixed; inset: 0; background: #0f172a; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-            padding: 20px;
-        }
-        #firebase-gate h1 { font-size: 32px; }
-        .gate-card {
-            background: #1e293b; border: 1px solid var(--border-color); border-radius: 16px;
-            padding: 30px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 15px;
-        }
-        .gate-card h3 { margin: 0; color: var(--accent); font-size: 18px; }
-        .gate-card p { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
-        .gate-input-row { display: flex; gap: 10px; }
-        .gate-input-row input { flex: 1; }
-        .gate-tabs { display: flex; gap: 10px; }
-        .gate-tab { flex: 1; padding: 10px; border-radius: 8px; border: 2px solid var(--border-color); background: transparent; color: var(--text-muted); cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.2s; }
-        .gate-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(190,242,100,0.1); }
-        #gate-error { color: #ef4444; font-size: 13px; min-height: 18px; text-align: center; }
-        #gate-loading { color: var(--text-muted); font-size: 13px; text-align: center; }
+<style>
+:root{
+  --bg:#0f172a; --card:#1e293b; --txt:#f8fafc; --muted:#94a3b8;
+  --green:#bef264; --orange:#f97316; --border:#334155;
+  --canvas:#e2e8f0; --match:#ffffff; --line:#94a3b8; --lw:2px;
+}
+*{box-sizing:border-box;}
+body{font-family:'Segoe UI',Microsoft JhengHei,sans-serif;background:var(--bg);color:var(--txt);margin:0;padding:20px;}
+.wrap{max-width:1400px;margin:0 auto;background:var(--card);padding:25px;border-radius:16px;box-shadow:0 10px 30px #0008;}
+h1{font-size:38px;letter-spacing:2px;margin:0;font-weight:900;text-align:center;}
+.sub{color:var(--muted);font-size:14px;letter-spacing:4px;text-align:center;margin:5px 0 25px;}
+h2{color:var(--green);border-left:5px solid var(--green);padding-left:12px;font-size:20px;margin:15px 0;}
+.sec{margin-bottom:30px;padding-bottom:15px;border-bottom:1px solid var(--border);}
 
-        /* 狀態列 */
-        #status-bar {
-            display: flex; align-items: center; gap: 10px; padding: 8px 15px;
-            background: #0f172a; border-radius: 8px; border: 1px solid var(--border-color);
-            margin-bottom: 15px; font-size: 13px;
-        }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; }
-        .status-dot.online { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
-        .status-dot.judge { background: var(--accent-orange); box-shadow: 0 0 6px var(--accent-orange); }
-        #status-text { flex: 1; color: var(--text-muted); }
-        #status-role { font-weight: bold; }
-        #sync-indicator { font-size: 11px; color: #4ade80; opacity: 0; transition: opacity 0.3s; }
-        #sync-indicator.show { opacity: 1; }
+input,select{padding:12px 16px;background:#0f172a;color:#fff;border:1px solid var(--border);border-radius:8px;font-size:16px;}
+button{padding:11px 22px;border-radius:8px;border:none;font-size:15px;font-weight:bold;cursor:pointer;transition:.2s;}
+button:disabled{opacity:.4;cursor:not-allowed;}
+.bp{background:var(--green);color:#000;} .bp:hover:not(:disabled){background:#d9f99d;}
+.bc{background:#38bdf8;color:#000;}
+.bs{background:#475569;color:#fff;}
+.bd{background:#ef4444;color:#fff;}
+.bfull{width:100%;padding:14px;font-size:16px;}
+.bsuccess{background:var(--orange);color:#fff;width:100%;font-size:18px;padding:14px;margin-top:15px;}
 
-        /* 觀眾鎖定遮罩 */
-        #viewer-lock-overlay {
-            display: none; position: fixed; inset: 0; z-index: 100;
-            pointer-events: none;
-        }
-        #viewer-lock-overlay.active { display: block; pointer-events: all; }
-        .viewer-banner {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(15,23,42,0.95); border: 2px solid var(--accent);
-            border-radius: 12px; padding: 10px 20px; color: var(--accent);
-            font-weight: bold; font-size: 14px; z-index: 200; white-space: nowrap;
-            pointer-events: none;
-        }
+/* ── Gate ── */
+#gate{
+  position:fixed;inset:0;background:var(--bg);z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:20px;
+  overflow-y:auto;
+}
+.gcard{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;}
+.gcard h3{margin:0;color:var(--green);font-size:18px;}
+.gcard p{margin:0;color:var(--muted);font-size:13px;line-height:1.6;}
+.gtabs{display:flex;gap:10px;}
+.gtab{flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:14px;font-weight:bold;transition:.2s;}
+.gtab.on{border-color:var(--green);color:var(--green);background:rgba(190,242,100,.1);}
+#gerr{color:#ef4444;font-size:13px;min-height:18px;text-align:center;}
+#gload{color:var(--muted);font-size:13px;text-align:center;}
 
-        /* 原有樣式 */
-        .setup-control-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; align-items: center; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin: 20px 0; }
-        .control-group { display: flex; align-items: center; gap: 8px; }
-        ul { list-style: none; padding: 0; max-width: 500px; margin: 15px auto; max-height: 300px; overflow-y: auto; background: #0f172a; border-radius: 8px; border: 1px solid #2d3748; padding: 5px; }
-        li { background: #1e293b; margin: 4px 0; padding: 8px 15px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); }
+/* ── Status bar ── */
+#sbar{display:flex;align-items:center;gap:10px;padding:8px 15px;background:#0f172a;border-radius:8px;border:1px solid var(--border);margin-bottom:15px;font-size:13px;}
+.sdot{width:8px;height:8px;border-radius:50%;background:#475569;flex-shrink:0;}
+.sdot.viewer{background:#4ade80;box-shadow:0 0 6px #4ade80;}
+.sdot.judge{background:var(--orange);box-shadow:0 0 6px var(--orange);}
+#srole{font-weight:bold;}
+#sync{font-size:11px;color:#4ade80;opacity:0;transition:opacity .3s;}
+#sync.on{opacity:1;}
 
-        .fixed-control-panel { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1400px; z-index: 999; background: #0f172a; border: 3px solid var(--accent-orange); border-top: none; padding: 15px 25px; border-radius: 0 0 16px 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.9); box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
-        .top-nav-btns { display: flex; gap: 10px; width: 220px; }
-        .scoring-zone { flex-grow: 1; display: flex; justify-content: center; align-items: center; gap: 20px; }
-        .match-label { font-weight: bold; color: var(--accent-orange); font-size: 18px; white-space: nowrap; }
-        .player-name-disp { font-size: 20px; font-weight: bold; color: #fff; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .vs-text { font-weight: bold; color: var(--text-muted); font-size: 16px; }
-        .score-input { width: 70px; padding: 8px; font-size: 22px; text-align: center; background: #1e293b; color: #fff; border: 2px solid var(--border-color); border-radius: 8px; font-weight: bold; }
-        .submit-btn { padding: 10px 24px; font-size: 16px; white-space: nowrap; }
-        .spacer { width: 220px; }
-        .pad-top { padding-top: 90px; }
+/* ── Viewer overlay ── */
+#veil{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(15,23,42,.95);border:2px solid var(--green);border-radius:12px;
+  padding:10px 20px;color:var(--green);font-weight:bold;font-size:14px;z-index:500;
+  pointer-events:none;white-space:nowrap;}
 
-        .match-box { background: var(--match-bg); border: 1px solid #94a3b8; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 220px; position: relative; z-index: 2; }
-        .match-box.active { border: 3px solid var(--accent-orange); box-shadow: 0 0 15px rgba(249,115,22,0.6); transform: scale(1.05); z-index: 10; transition: 0.2s; }
-        .player-row { display: flex; align-items: center; height: 34px; font-size: 14px; font-weight: bold; color: #1e293b; border-bottom: 1px solid #e2e8f0; }
-        .player-row:last-child { border-bottom: none; }
-        .player-row.winner { background: #f0fdf4; color: #16a34a; }
-        .player-row.bye { color: #94a3b8; font-style: italic; }
-        .player-name { flex-grow: 1; padding: 0 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .player-score { background: #cbd5e1; width: 35px; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: 900; }
-        .seed-box { background: var(--accent); color: #000; font-weight: 900; width: 30px; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 14px; }
-        .seed-box.empty { background: #cbd5e1; }
+/* ── Setup ── */
+.ctrl-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:15px;align-items:center;background:#0f172a;padding:20px;border-radius:12px;border:1px solid var(--border);margin:20px 0;}
+.cg{display:flex;align-items:center;gap:8px;}
+ul{list-style:none;padding:5px;max-width:500px;margin:15px auto;max-height:300px;overflow-y:auto;background:#0f172a;border-radius:8px;border:1px solid #2d3748;}
+li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);}
 
-        .double-canvas { background: var(--canvas-bg); padding: 40px; border-radius: 12px; display: flex; justify-content: space-between; align-items: stretch; min-width: 1100px; position: relative; overflow-x: auto; }
-        .wing { display: flex; width: 350px; justify-content: space-between; position: relative; }
-        .col-outer, .col-inner { display: flex; flex-direction: column; justify-content: space-around; position: relative; }
-        .col-outer { height: 400px; }
-        .col-inner { height: 200px; margin-top: 100px; }
-        .center-stage { display: flex; flex-direction: column; align-items: center; justify-content: space-between; width: 300px; z-index: 5; }
-        .trophy-sec { text-align: center; margin-bottom: 10px; }
-        .trophy-title { font-weight: 900; font-size: 24px; color: #0f172a; letter-spacing: 2px; line-height: 1.2;}
-        .trophy-sub { font-size: 14px; color: #475569; font-weight: bold; letter-spacing: 1px;}
+/* ── Fixed panel ── */
+.fpanel{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:1400px;z-index:999;
+  background:#0f172a;border:3px solid var(--orange);border-top:none;padding:15px 25px;
+  border-radius:0 0 16px 16px;box-shadow:0 15px 35px #000e;
+  display:flex;justify-content:space-between;align-items:center;}
+.fnav{display:flex;gap:10px;width:220px;}
+.fzone{flex-grow:1;display:flex;justify-content:center;align-items:center;gap:20px;}
+.flabel{font-weight:bold;color:var(--orange);font-size:18px;white-space:nowrap;}
+.fname{font-size:20px;font-weight:bold;color:#fff;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fvs{font-weight:bold;color:var(--muted);font-size:16px;}
+.fscore{width:70px;padding:8px;font-size:22px;text-align:center;background:#1e293b;color:#fff;border:2px solid var(--border);border-radius:8px;font-weight:bold;}
+.fspacer{width:220px;}
+.padtop{padding-top:90px;}
 
-        .left-wing .col-outer .match-box::after { content:''; position:absolute; right:-30px; top:50%; width:30px; border-top:var(--line-thick) solid var(--line-color); }
-        .left-wing .col-inner::before { content:''; position:absolute; left:-30px; top:25%; bottom:25%; border-left:var(--line-thick) solid var(--line-color); border-top:var(--line-thick) solid var(--line-color); border-bottom:var(--line-thick) solid var(--line-color); width:30px; border-radius: 6px 0 0 6px; }
-        .left-wing .col-inner .match-box::after { content:''; position:absolute; right:-40px; top:50%; width:40px; border-top:var(--line-thick) solid var(--line-color); }
-        .right-wing { flex-direction: row-reverse; }
-        .right-wing .player-row { flex-direction: row-reverse; }
-        .right-wing .player-name { text-align: right; }
-        .right-wing .col-outer .match-box::after { content:''; position:absolute; left:-30px; top:50%; width:30px; border-top:var(--line-thick) solid var(--line-color); }
-        .right-wing .col-inner::before { content:''; position:absolute; right:-30px; top:25%; bottom:25%; border-right:var(--line-thick) solid var(--line-color); border-top:var(--line-thick) solid var(--line-color); border-bottom:var(--line-thick) solid var(--line-color); width:30px; border-radius: 0 6px 6px 0; }
-        .right-wing .col-inner .match-box::after { content:''; position:absolute; left:-40px; top:50%; width:40px; border-top:var(--line-thick) solid var(--line-color); }
-        .center-stage .final-match { position: relative; }
-        .center-stage .final-match::before { content:''; position:absolute; left:-40px; top:50%; width:40px; border-top:var(--line-thick) solid var(--line-color); }
-        .center-stage .final-match::after { content:''; position:absolute; right:-40px; top:50%; width:40px; border-top:var(--line-thick) solid var(--line-color); }
+/* ── Match box ── */
+.mb{background:var(--match);border:1px solid #94a3b8;border-radius:4px;box-shadow:0 2px 5px #0002;width:220px;position:relative;z-index:2;}
+.mb.active{border:3px solid var(--orange);box-shadow:0 0 15px rgba(249,115,22,.6);transform:scale(1.05);z-index:10;transition:.2s;}
+.pr{display:flex;align-items:center;height:34px;font-size:14px;font-weight:bold;color:#1e293b;border-bottom:1px solid #e2e8f0;}
+.pr:last-child{border-bottom:none;}
+.pr.win{background:#f0fdf4;color:#16a34a;}
+.pr.bye{color:#94a3b8;font-style:italic;}
+.pname{flex-grow:1;padding:0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pscore{background:#cbd5e1;width:35px;height:100%;display:flex;justify-content:center;align-items:center;font-size:16px;font-weight:900;}
+.seed{background:var(--green);color:#000;font-weight:900;width:30px;height:100%;display:flex;justify-content:center;align-items:center;font-size:14px;}
+.seed.empty{background:#cbd5e1;}
 
-        .podium-box { margin-top: 20px; width: 220px; }
-        .pod-row { display: flex; background: #0f172a; color: #fff; margin: 4px 0; transform: skewX(-15deg); overflow: hidden; border: 1px solid #fff; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);}
-        .pod-rank { background: #334155; color: var(--accent); padding: 5px 10px; font-weight: 900; font-size: 13px; width: 35px; text-align: center; }
-        .pod-name { padding: 5px 10px; font-weight: bold; font-size: 13px; flex-grow: 1; transform: skewX(15deg); text-align: center; }
+/* ── Double wing ── */
+.dcanvas{background:var(--canvas);padding:40px;border-radius:12px;display:flex;justify-content:space-between;align-items:stretch;min-width:1100px;position:relative;overflow-x:auto;}
+.wing{display:flex;width:350px;justify-content:space-between;position:relative;}
+.col-o,.col-i{display:flex;flex-direction:column;justify-content:space-around;position:relative;}
+.col-o{height:400px;}.col-i{height:200px;margin-top:100px;}
+.cstage{display:flex;flex-direction:column;align-items:center;justify-content:space-between;width:300px;z-index:5;}
+.trophy-sec{text-align:center;margin-bottom:10px;}
+.trophy-t{font-weight:900;font-size:24px;color:#0f172a;letter-spacing:2px;line-height:1.2;}
+.trophy-s{font-size:14px;color:#475569;font-weight:bold;letter-spacing:1px;}
+.lwing .col-o .mb::after{content:'';position:absolute;right:-30px;top:50%;width:30px;border-top:var(--lw) solid var(--line);}
+.lwing .col-i::before{content:'';position:absolute;left:-30px;top:25%;bottom:25%;border-left:var(--lw) solid var(--line);border-top:var(--lw) solid var(--line);border-bottom:var(--lw) solid var(--line);width:30px;border-radius:6px 0 0 6px;}
+.lwing .col-i .mb::after{content:'';position:absolute;right:-40px;top:50%;width:40px;border-top:var(--lw) solid var(--line);}
+.rwing{flex-direction:row-reverse;}
+.rwing .pr{flex-direction:row-reverse;}
+.rwing .pname{text-align:right;}
+.rwing .col-o .mb::after{content:'';position:absolute;left:-30px;top:50%;width:30px;border-top:var(--lw) solid var(--line);}
+.rwing .col-i::before{content:'';position:absolute;right:-30px;top:25%;bottom:25%;border-right:var(--lw) solid var(--line);border-top:var(--lw) solid var(--line);border-bottom:var(--lw) solid var(--line);width:30px;border-radius:0 6px 6px 0;}
+.rwing .col-i .mb::after{content:'';position:absolute;left:-40px;top:50%;width:40px;border-top:var(--lw) solid var(--line);}
+.cstage .fmatch{position:relative;}
+.cstage .fmatch::before{content:'';position:absolute;left:-40px;top:50%;width:40px;border-top:var(--lw) solid var(--line);}
+.cstage .fmatch::after{content:'';position:absolute;right:-40px;top:50%;width:40px;border-top:var(--lw) solid var(--line);}
+.podbox{margin-top:20px;width:220px;}
+.pod{display:flex;background:#0f172a;color:#fff;margin:4px 0;transform:skewX(-15deg);overflow:hidden;border:1px solid #fff;box-shadow:2px 2px 0 #0003;}
+.pod-r{background:#334155;color:var(--green);padding:5px 10px;font-weight:900;font-size:13px;width:35px;text-align:center;}
+.pod-n{padding:5px 10px;font-weight:bold;font-size:13px;flex-grow:1;transform:skewX(15deg);text-align:center;}
 
-        .single-canvas { background: var(--canvas-bg); padding: 40px; border-radius: 12px; overflow-x: auto; display: flex; align-items: center; min-height: 400px; }
-        .tree-node { display: flex; align-items: center; position: relative; }
-        .tree-children { display: flex; flex-direction: column; justify-content: center; position: relative; padding-right: 30px; }
-        .tree-child-wrapper { position: relative; padding: 10px 0; display: flex; align-items: center; }
-        .tree-children::after { content: ''; position: absolute; right: 15px; top: 25%; bottom: 25%; border-right: var(--line-thick) solid var(--line-color); }
-        .tree-child-wrapper::after { content: ''; position: absolute; right: 0; top: 50%; width: 15px; border-top: var(--line-thick) solid var(--line-color); }
-        .tree-parent { margin-left: 15px; position: relative; }
-        .tree-parent::before { content: ''; position: absolute; left: -15px; top: 50%; width: 15px; border-top: var(--line-thick) solid var(--line-color); }
-        .single-third-place { margin-left: 60px; padding-left: 40px; border-left: 2px dashed #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+/* ── Single wing ── */
+.scanvas{background:var(--canvas);padding:40px;border-radius:12px;overflow-x:auto;display:flex;align-items:center;min-height:400px;}
+.tnode{display:flex;align-items:center;position:relative;}
+.tchildren{display:flex;flex-direction:column;justify-content:center;position:relative;padding-right:30px;}
+.tchildren::after{content:'';position:absolute;right:15px;top:25%;bottom:25%;border-right:var(--lw) solid var(--line);}
+.tchild{position:relative;padding:10px 0;display:flex;align-items:center;}
+.tchild::after{content:'';position:absolute;right:0;top:50%;width:15px;border-top:var(--lw) solid var(--line);}
+.tparent{margin-left:15px;position:relative;}
+.tparent::before{content:'';position:absolute;left:-15px;top:50%;width:15px;border-top:var(--lw) solid var(--line);}
+.s3rd{margin-left:60px;padding-left:40px;border-left:2px dashed #94a3b8;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 
-        .hidden { display: none !important; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #0f172a; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); }
-        th { background-color: #1e293b; color: var(--accent); }
-        .top-rank { background: rgba(190, 242, 100, 0.08); }
+/* ── Misc ── */
+.hidden{display:none!important;}
+table{width:100%;border-collapse:collapse;margin-top:15px;background:#0f172a;border-radius:8px;overflow:hidden;}
+th,td{padding:12px;text-align:center;border-bottom:1px solid var(--border);}
+th{background:var(--card);color:var(--green);}
+.toprow{background:rgba(190,242,100,.08);}
 
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            h1 { font-size: 28px; }
-            .setup-control-bar { flex-direction: column; align-items: stretch; gap: 15px; }
-            .control-group { width: 100%; border-left: none !important; padding-left: 0 !important; justify-content: space-between; }
-            .control-group input { flex-grow: 1; margin-right: 10px; width: auto; }
-            .fixed-control-panel { flex-direction: column; padding: 12px 15px !important; border-radius: 0 0 12px 12px !important; }
-            .top-nav-btns { width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
-            .top-nav-btns button { flex: 1; padding: 10px !important; font-size: 14px !important; margin: 0; }
-            .scoring-zone { flex-wrap: wrap; gap: 10px; width: 100%; }
-            .match-label { width: 100%; text-align: center; margin-bottom: 2px; }
-            .player-name-disp { max-width: 90px; font-size: 18px; }
-            .score-input { width: 60px; height: 45px; font-size: 22px !important; padding: 5px; }
-            .submit-btn { width: 100%; margin-top: 8px; padding: 15px !important; font-size: 18px; }
-            .spacer { display: none; }
-            #finished-zone { flex-direction: column; gap: 10px; padding-top: 5px; }
-            #undo-btn-finish { width: 100% !important; margin: 0 !important; padding: 15px !important; font-size: 16px !important; }
-            .pad-top { padding-top: 210px; }
-            #leaderboard-table { display: block; overflow-x: auto; white-space: nowrap; }
-            .viewer-banner { font-size: 12px; padding: 8px 14px; }
-        }
-    </style>
+@media(max-width:768px){
+  body{padding:10px;} h1{font-size:28px;}
+  .ctrl-bar{flex-direction:column;align-items:stretch;gap:15px;}
+  .cg{width:100%;border-left:none!important;padding-left:0!important;justify-content:space-between;}
+  .cg input{flex-grow:1;margin-right:10px;width:auto;}
+  .fpanel{flex-direction:column;padding:12px 15px!important;border-radius:0 0 12px 12px!important;}
+  .fnav{width:100%;justify-content:space-between;margin-bottom:10px;gap:10px;}
+  .fnav button{flex:1;padding:10px!important;font-size:14px!important;margin:0;}
+  .fzone{flex-wrap:wrap;gap:10px;width:100%;}
+  .flabel{width:100%;text-align:center;margin-bottom:2px;}
+  .fname{max-width:90px;font-size:18px;}
+  .fscore{width:60px;height:45px;font-size:22px!important;padding:5px;}
+  .fspacer{display:none;}
+  #finzone{flex-direction:column;gap:10px;padding-top:5px;}
+  .padtop{padding-top:210px;}
+  #lbtable{display:block;overflow-x:auto;white-space:nowrap;}
+  #veil{font-size:12px;padding:8px 14px;}
+}
+</style>
 </head>
 <body>
 
-<!-- ===== Firebase 連線入口 ===== -->
-<div id="firebase-gate">
-    <div style="text-align:center;">
-        <h1>⚡ BEYBLADE X</h1>
-        <div style="color:var(--text-muted); font-size:13px; letter-spacing:3px; margin-top:5px;">ベイブレードエックス 賽事系統 v23.0</div>
-    </div>
+<!-- ════════════════════════════════════════
+     GATE (入口畫面)
+════════════════════════════════════════ -->
+<div id="gate">
+  <div style="text-align:center">
+    <h1>⚡ BEYBLADE X</h1>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v24.0</div>
+  </div>
 
-    <div class="gate-card">
-        <h3>🏟️ 選擇房間與身分</h3>
-        <div class="gate-tabs">
-            <button class="gate-tab active" id="tab-judge" onclick="selectGateTab('judge')">⚔️ 裁判組</button>
-            <button class="gate-tab" id="tab-viewer" onclick="selectGateTab('viewer')">👁️ 選手 / 觀眾</button>
-        </div>
-        <div class="gate-input-row">
-            <input type="text" id="room-id-input" placeholder="房間 ID（自訂，例如：cup2025）" style="flex:1;">
-        </div>
-        <div id="judge-pw-section">
-            <div class="gate-input-row">
-                <input type="password" id="judge-pw-input" placeholder="裁判密碼（自行設定或輸入已有密碼）">
-            </div>
-            <p style="color:#f97316; font-size:12px;">⚠️ 第一次進入此房間會以這組密碼作為裁判密碼，之後裁判需輸入相同密碼才能進入。</p>
-        </div>
-        <div id="gate-error"></div>
-        <div id="gate-loading"></div>
-        <button class="btn-primary" style="width:100%; padding:14px; font-size:16px;" onclick="enterRoom()">進入賽場 ➔</button>
+  <div class="gcard">
+    <h3>🏟️ 選擇身分與房間</h3>
+    <div class="gtabs">
+      <button class="gtab on" id="tab-j" onclick="pickRole('judge')">⚔️ 裁判組</button>
+      <button class="gtab"    id="tab-v" onclick="pickRole('viewer')">👁️ 選手 / 觀眾</button>
     </div>
+    <input type="text" id="g-room" placeholder="房間 ID（例如：cup2025）" style="width:100%">
+    <div id="pw-row">
+      <input type="password" id="g-pw" placeholder="裁判密碼" style="width:100%">
+      <p style="color:var(--orange);font-size:12px;margin:0">
+        ⚠️ 第一次進入此房間會以這組密碼作為裁判密碼。
+      </p>
+    </div>
+    <div id="gerr" style="color:#ef4444;font-size:13px;min-height:18px;text-align:center"></div>
+    <div id="gload" style="color:var(--muted);font-size:13px;text-align:center"></div>
+    <button class="bp bfull" onclick="enterRoom()">進入賽場 ➔</button>
+  </div>
 </div>
 
-<!-- 觀眾鎖定提示 -->
-<div id="viewer-lock-overlay">
-    <div class="viewer-banner">👁️ 觀看模式 — 畫面即時同步中，僅供查看</div>
-</div>
+<!-- 觀眾提示條 -->
+<div id="veil">👁️ 觀看模式 — 畫面即時同步中，僅供查看</div>
 
-<div class="container" id="capture-area">
-    <div id="main-header" class="nav-bar">
-        <div>
-            <h1>BEYBLADE X</h1>
-            <div class="subtitle">ベイブレードエックス 賽事系統</div>
+<!-- ════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════ -->
+<div class="wrap" id="app">
+
+  <div id="hdr">
+    <h1>BEYBLADE X</h1>
+    <div class="sub">ベイブレードエックス 賽事系統</div>
+  </div>
+
+  <!-- 狀態列 -->
+  <div id="sbar">
+    <div class="sdot" id="sdot"></div>
+    <span id="stxt" style="flex:1;color:var(--muted)">未連線</span>
+    <span id="srole"></span>
+    <span id="sync">✓ 已同步</span>
+    <button class="bs" id="leavebtn" style="padding:5px 12px;font-size:12px;margin-left:10px" onclick="leaveRoom()">離開房間</button>
+  </div>
+
+  <!-- 1. 選手設定 -->
+  <div id="setup" class="sec">
+    <h2>1. 參賽選手設定</h2>
+    <div class="ctrl-bar">
+      <div class="cg">
+        <input type="text" id="manIn" placeholder="手動輸入名字" onkeypress="if(event.key==='Enter')addPlayer()">
+        <button class="bp" onclick="addPlayer()">新增</button>
+      </div>
+      <div class="cg" style="border-left:2px solid var(--border);padding-left:15px">
+        <input type="number" id="batchN" placeholder="人數 (如: 64)" style="width:100px" min="2" max="128">
+        <button class="bc" onclick="batchAdd()">⚡ 一鍵生成</button>
+      </div>
+      <div class="cg" style="border-left:2px solid var(--border);padding-left:15px">
+        <button class="bd" onclick="clearPlayers()">🗑 清空名單</button>
+      </div>
+    </div>
+    <div style="text-align:center;color:var(--muted);font-size:14px;margin-bottom:5px">
+      當前名單：<span id="pcount" style="color:var(--green);font-weight:bold;font-size:16px">0</span> 人
+    </div>
+    <ul id="plist"></ul>
+    <div style="text-align:center;margin-top:20px;background:#0f172a;padding:20px;border-radius:12px;border:1px solid var(--border)">
+      <select id="mode">
+        <option value="single">單翼淘汰賽（支援多人）</option>
+        <option value="double">雙翼淘汰賽（最多 8 人）</option>
+        <option value="rr">循環戰（全循環積分制）</option>
+      </select>
+      <button class="bsuccess" onclick="startTournament()">正式產生賽事 ➔</button>
+    </div>
+  </div>
+
+  <!-- 計分固定面板 -->
+  <div id="fpanel" class="fpanel hidden" data-html2canvas-ignore>
+    <div class="fnav">
+      <button class="bs" onclick="backToMenu()">⬅ 返回選單</button>
+      <button class="bd" id="undobtn" onclick="undoLast()" disabled>↶ 上一步</button>
+    </div>
+    <div id="scorezone" class="fzone">
+      <span id="flabel" class="flabel">【當前對戰】</span>
+      <span id="fp1" class="fname">-</span>
+      <input type="number" id="fs1" class="fscore" value="0" min="0" onfocus="this.select()">
+      <span class="fvs">VS</span>
+      <input type="number" id="fs2" class="fscore" value="0" min="0" onfocus="this.select()">
+      <span id="fp2" class="fname">-</span>
+      <button class="bp" style="padding:10px 24px;font-size:16px;white-space:nowrap" onclick="submitScore()">確認比分</button>
+    </div>
+    <div id="finzone" class="hidden" style="flex-grow:1;text-align:center;display:flex;justify-content:center;align-items:center;gap:15px">
+      <span style="color:var(--green);font-weight:bold;font-size:18px">🏆 全賽程結束！</span>
+      <button class="bd" id="undobtn2" style="padding:6px 14px;font-size:14px" onclick="undoLast()" disabled>↶ 修改上一場</button>
+    </div>
+    <div class="fspacer"></div>
+  </div>
+
+  <!-- 賽程區域 -->
+  <div id="arena" class="sec hidden padtop">
+    <!-- 雙翼 -->
+    <div id="dcanvas" class="dcanvas hidden">
+      <div class="wing lwing">
+        <div class="col-o"><div id="b-m1"></div><div id="b-m2"></div></div>
+        <div class="col-i"><div id="b-m5"></div></div>
+      </div>
+      <div class="cstage">
+        <div class="trophy-sec">
+          <div style="font-size:40px;margin-bottom:-10px">🏆</div>
+          <div class="trophy-t">BEYBLADE X</div>
+          <div class="trophy-s">TOURNAMENT WINNER</div>
         </div>
+        <div class="fmatch" id="b-m7"></div>
+        <div style="margin-top:15px;display:flex;flex-direction:column;align-items:center">
+          <div style="font-size:11px;font-weight:900;color:#475569;letter-spacing:1px;margin-bottom:2px">3RD PLACE</div>
+          <div id="b-m8" style="transform:scale(.9)"></div>
+        </div>
+        <div class="podbox">
+          <div class="pod"><div class="pod-r">1st</div><div class="pod-n" id="p1st">-</div></div>
+          <div class="pod"><div class="pod-r">2nd</div><div class="pod-n" id="p2nd">-</div></div>
+          <div class="pod"><div class="pod-r">3rd</div><div class="pod-n" id="p3rd">-</div></div>
+          <div class="pod"><div class="pod-r">4th</div><div class="pod-n" id="p4th">-</div></div>
+        </div>
+      </div>
+      <div class="wing rwing">
+        <div class="col-o"><div id="b-m3"></div><div id="b-m4"></div></div>
+        <div class="col-i"><div id="b-m6"></div></div>
+      </div>
     </div>
 
-    <!-- 狀態列 -->
-    <div id="status-bar">
-        <div class="status-dot" id="status-dot"></div>
-        <span id="status-text">未連線</span>
-        <span id="status-role"></span>
-        <span id="sync-indicator">✓ 已同步</span>
-        <button id="leave-room-btn" class="btn-secondary" style="padding:5px 12px; font-size:12px; margin-left:auto;" onclick="leaveRoom()">離開房間</button>
-    </div>
+    <!-- 單翼 -->
+    <div id="scanvas" class="scanvas hidden"></div>
+    <!-- 循環 -->
+    <div id="rrcanvas" class="hidden"></div>
+  </div>
 
-    <div id="setup-section" class="section">
-        <h2>1. 參賽選手設定</h2>
-        <div class="setup-control-bar">
-            <div class="control-group">
-                <input type="text" id="manualInput" placeholder="手動輸入名字" onkeypress="if(event.key==='Enter') addManualPlayer()">
-                <button class="btn-primary" onclick="addManualPlayer()">新增</button>
-            </div>
-            <div class="control-group" style="border-left: 2px solid var(--border-color); padding-left: 15px;">
-                <input type="number" id="batchInput" placeholder="人數 (如: 64)" style="width: 100px;" min="2" max="128">
-                <button class="btn-cyan" onclick="addBatchPlayers()">⚡ 一鍵生成</button>
-            </div>
-            <div class="control-group" style="border-left: 2px solid var(--border-color); padding-left: 15px;">
-                <button class="btn-danger" onclick="clearAllPlayers()">🗑 清空名單</button>
-            </div>
-        </div>
-        <div style="text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 5px;">當前名單人數：<span id="player-count-display" style="color: var(--accent); font-weight: bold; font-size: 16px;">0</span> 人</div>
-        <ul id="playerList"></ul>
-        <div style="text-align: center; margin-top: 20px; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
-            <select id="tournamentMode">
-                <option value="elim-single">單翼淘汰賽 (500人上限)</option>
-                <option value="elim-double">雙翼淘汰賽 (最多 8 人)</option>
-                <option value="round-robin">循環戰 (全循環積分制)</option>
-            </select>
-            <button class="btn-success" onclick="startTournament()">正式產生賽事 ➔</button>
-        </div>
+  <!-- 排行榜 -->
+  <div id="lbsec" class="sec hidden">
+    <h2>🏅 賽事戰績結算表</h2>
+    <table><thead><tr>
+      <th style="width:70px">名次</th><th>選手</th>
+      <th>勝場</th><th>負場</th><th>總得分</th><th>總失分</th><th>失分率</th>
+    </tr></thead><tbody id="lbbody"></tbody></table>
+    <div style="margin-top:25px" data-html2canvas-ignore>
+      <button class="bp bfull" style="padding:15px" onclick="downloadPoster()">📷 下載對戰海報</button>
     </div>
+  </div>
 
-    <div id="fixed-control" class="fixed-control-panel hidden" data-html2canvas-ignore>
-        <div class="top-nav-btns">
-            <button class="btn-secondary" onclick="backToMenu()">⬅ 返回選單</button>
-            <button class="btn-danger" id="undo-btn" onclick="undoLastMatch()" disabled>↶ 上一步</button>
-        </div>
-        <div id="active-scoring-zone" class="scoring-zone">
-            <span id="match-label" class="match-label">【當前對戰】</span>
-            <span id="p1-name-disp" class="player-name-disp">-</span>
-            <input type="number" id="p1-score-input" class="score-input" value="0" min="0" onfocus="this.select()">
-            <span class="vs-text">VS</span>
-            <input type="number" id="p2-score-input" class="score-input" value="0" min="0" onfocus="this.select()">
-            <span id="p2-name-disp" class="player-name-disp">-</span>
-            <button class="btn-primary submit-btn" onclick="submitGlobalResult()">確認比分</button>
-        </div>
-        <div id="finished-zone" class="hidden" style="flex-grow:1; text-align:center; display:flex; justify-content:center; align-items:center; gap: 15px;">
-            <span style="color:var(--accent); font-weight:bold; font-size:18px;">🏆 全賽程結束！請查看下方結算與下載海報！</span>
-            <button class="btn-danger" id="undo-btn-finish" style="padding: 6px 14px; font-size: 14px;" onclick="undoLastMatch()" disabled>↶ 修改上一場</button>
-        </div>
-        <div class="spacer"></div>
-    </div>
-
-    <div id="arena-section" class="section hidden pad-top">
-        <div id="double-wing-canvas" class="double-canvas hidden">
-            <div class="wing left-wing">
-                <div class="col-outer"><div id="m1-box"></div><div id="m2-box"></div></div>
-                <div class="col-inner"><div id="m5-box"></div></div>
-            </div>
-            <div class="center-stage">
-                <div class="trophy-sec">
-                    <div style="font-size:40px; margin-bottom:-10px;">🏆</div>
-                    <div class="trophy-title">BEYBLADE X</div>
-                    <div class="trophy-sub">TOURNAMENT WINNER</div>
-                </div>
-                <div class="final-match" id="m7-box"></div>
-                <div style="margin-top: 15px; display:flex; flex-direction:column; align-items:center;">
-                    <div style="font-size:11px; font-weight:900; color:#475569; letter-spacing:1px; margin-bottom:2px;">3RD PLACE</div>
-                    <div id="m8-box" style="transform: scale(0.9);"></div>
-                </div>
-                <div class="podium-box">
-                    <div class="pod-row"><div class="pod-rank">1st</div><div class="pod-name" id="pod-1">-</div></div>
-                    <div class="pod-row"><div class="pod-rank">2nd</div><div class="pod-name" id="pod-2">-</div></div>
-                    <div class="pod-row"><div class="pod-rank">3rd</div><div class="pod-name" id="pod-3">-</div></div>
-                    <div class="pod-row"><div class="pod-rank">4th</div><div class="pod-name" id="pod-4">-</div></div>
-                </div>
-            </div>
-            <div class="wing right-wing">
-                <div class="col-outer"><div id="m3-box"></div><div id="m4-box"></div></div>
-                <div class="col-inner"><div id="m6-box"></div></div>
-            </div>
-        </div>
-        <div id="single-wing-canvas" class="single-canvas hidden"></div>
-        <div id="rr-canvas" class="hidden"></div>
-    </div>
-
-    <div id="leaderboard-section" class="section hidden">
-        <h2>🏅 賽事戰績結算表</h2>
-        <table id="leaderboard-table">
-            <thead>
-                <tr>
-                    <th style="width: 70px;">名次</th>
-                    <th>選手</th>
-                    <th>勝場</th>
-                    <th>負場</th>
-                    <th>總得分</th>
-                    <th>總失分</th>
-                    <th>失分率</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboard-body"></tbody>
-        </table>
-        <div style="margin-top:25px; display:flex; gap:15px; flex-wrap: wrap;" data-html2canvas-ignore>
-            <button class="btn-primary" style="flex:2; padding:15px; width: 100%;" onclick="downloadTournamentImage()">📷 擷取下載對戰海報</button>
-        </div>
-    </div>
-</div>
+</div><!-- /wrap -->
 
 <script>
-// ============================================================
-// Firebase 連線管理
-// ============================================================
-let fbApp = null, fbAuth = null, fbDb = null;
-let currentRoom = '';
-let isJudge = false;
-let unsubscribeListener = null;
-let _ignoreNextSnapshot = false; // 避免自己寫完又重繪
-
-function selectGateTab(role) {
-    isJudge = (role === 'judge');
-    document.getElementById('tab-judge').classList.toggle('active', isJudge);
-    document.getElementById('tab-viewer').classList.toggle('active', !isJudge);
-    document.getElementById('judge-pw-section').style.display = isJudge ? 'flex' : 'none';
-    document.getElementById('judge-pw-section').style.flexDirection = 'column';
-    document.getElementById('judge-pw-section').style.gap = '10px';
-}
-
-// ── Firebase 設定（已內建，網頁上不顯示）──
-const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCGM6nO_LqSQI3D3MRS9fbWGHrpCR42QzU",
-    authDomain: "beyblade-x-4ff10.firebaseapp.com",
-    projectId: "beyblade-x-4ff10",
-    storageBucket: "beyblade-x-4ff10.firebasestorage.app",
-    messagingSenderId: "982144047140",
-    appId: "1:982144047140:web:82283a7444800f12f1a0b1",
-    measurementId: "G-5V7PG3HGBD"
+// ══════════════════════════════════════════════
+// Firebase 設定（內建，不顯示在畫面上）
+// ══════════════════════════════════════════════
+const FB_CFG = {
+  apiKey:"AIzaSyCGM6nO_LqSQI3D3MRS9fbWGHrpCR42QzU",
+  authDomain:"beyblade-x-4ff10.firebaseapp.com",
+  projectId:"beyblade-x-4ff10",
+  storageBucket:"beyblade-x-4ff10.firebasestorage.app",
+  messagingSenderId:"982144047140",
+  appId:"1:982144047140:web:82283a7444800f12f1a0b1",
+  measurementId:"G-5V7PG3HGBD"
 };
 
-async function enterRoom() {
-    const roomId = document.getElementById('room-id-input').value.trim();
-    const pw = document.getElementById('judge-pw-input').value.trim();
-    const errEl = document.getElementById('gate-error');
-    const loadEl = document.getElementById('gate-loading');
-    errEl.textContent = '';
+// ══════════════════════════════════════════════
+// 全域狀態
+// ══════════════════════════════════════════════
+let fbApp=null, fbAuth=null, fbDb=null;
+let roomId='', isJudge=false, unsub=null;
+let skipNext=false;          // 避免自己寫完又觸發監聽
+let viewerObserver=null;
 
-    if (!roomId) return errEl.textContent = '請輸入房間 ID！';
-    if (isJudge && !pw) return errEl.textContent = '裁判組需輸入密碼！';
+let players=[];
+let mode='';
+let matches=[];              // 淘汰賽節點清單
+let root=null;               // 單翼根節點
+let thirdNode=null;          // 季軍賽節點
+let activeMatch=null;
+let rrList=[], rrIdx=0;
+let history=[];              // 上一步 stack
 
-    const fbConfig = FIREBASE_CONFIG;
-    loadEl.textContent = '連線中...';
-    try {
-        const { initializeApp, getAuth, signInAnonymously, signInWithEmailAndPassword,
-                onAuthStateChanged, getFirestore, doc, setDoc, onSnapshot, getDoc } = window._fbModules;
+// ══════════════════════════════════════════════
+// GATE 邏輯
+// ══════════════════════════════════════════════
+function pickRole(r){
+  isJudge=(r==='judge');
+  document.getElementById('tab-j').classList.toggle('on',isJudge);
+  document.getElementById('tab-v').classList.toggle('on',!isJudge);
+  document.getElementById('pw-row').style.display=isJudge?'flex':'none';
+  document.getElementById('pw-row').style.flexDirection='column';
+  document.getElementById('pw-row').style.gap='8px';
+}
+// 預設顯示密碼列
+document.getElementById('pw-row').style.display='flex';
+document.getElementById('pw-row').style.flexDirection='column';
+document.getElementById('pw-row').style.gap='8px';
 
-        // 避免重複初始化
-        if (!fbApp) {
-            fbApp = initializeApp(fbConfig, 'beyblade-' + Date.now());
-        }
-        fbAuth = getAuth(fbApp);
-        fbDb = getFirestore(fbApp);
+async function enterRoom(){
+  const errEl=document.getElementById('gerr');
+  const loadEl=document.getElementById('gload');
+  errEl.textContent='';
 
-        // 裁判：用 email/password 登入（固定 email = roomId@judge.beyblade）
-        // 觀眾：匿名
-        if (isJudge) {
-            const safeRoom = roomId.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'room';
-            const email = `judge.${safeRoom}@beyblade-x.com`;
-            try {
-                await signInWithEmailAndPassword(fbAuth, email, pw);
-            } catch(e) {
-                if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/invalid-email') {
-                    // 嘗試建立帳號（只有第一次）
-                    const { createUserWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
-                    try {
-                        await createUserWithEmailAndPassword(fbAuth, email, pw);
-                    } catch(e2) {
-                        if (e2.code === 'auth/email-already-in-use') {
-                            return errEl.textContent = '密碼錯誤！此房間的裁判密碼已設定，請重新輸入。';
-                        }
-                        throw e2;
-                    }
-                } else if (e.code === 'auth/wrong-password') {
-                    return errEl.textContent = '密碼錯誤！';
-                } else {
-                    throw e;
-                }
+  const room=document.getElementById('g-room').value.trim();
+  const pw=document.getElementById('g-pw').value.trim();
+  if(!room)return errEl.textContent='請輸入房間 ID！';
+  if(isJudge&&!pw)return errEl.textContent='裁判組需輸入密碼！';
+
+  // 等待 Firebase SDK 載入
+  if(!window.__FB_READY){
+    loadEl.textContent='載入 SDK 中...';
+    await new Promise(res=>window.addEventListener('fb-ready',res,{once:true}));
+  }
+  loadEl.textContent='連線中...';
+
+  try{
+    const F=window.__FB;
+
+    // 初始化（每次 leaveRoom 後重建）
+    if(!fbApp){
+      fbApp=F.initializeApp(FB_CFG,'bey-'+Date.now());
+    }
+    fbAuth=F.getAuth(fbApp);
+    fbDb=F.getFirestore(fbApp);
+
+    if(isJudge){
+      // email 格式：judge.{safe房間名}@beyblade-x.com
+      const safe=room.replace(/[^a-zA-Z0-9]/g,'').toLowerCase()||'room';
+      const email=`judge.${safe}@beyblade-x.com`;
+      try{
+        await F.signInWithEmailAndPassword(fbAuth,email,pw);
+      }catch(e1){
+        if(['auth/user-not-found','auth/invalid-credential','auth/invalid-email','auth/invalid-login-credentials'].includes(e1.code)){
+          // 第一次：建立帳號
+          try{
+            await F.createUserWithEmailAndPassword(fbAuth,email,pw);
+          }catch(e2){
+            if(e2.code==='auth/email-already-in-use'){
+              loadEl.textContent='';
+              return errEl.textContent='密碼錯誤！此房間裁判密碼已設定，請輸入正確密碼。';
             }
-        } else {
-            await signInAnonymously(fbAuth);
+            throw e2;
+          }
+        }else if(e1.code==='auth/wrong-password'){
+          loadEl.textContent='';
+          return errEl.textContent='密碼錯誤！';
+        }else{
+          throw e1;
         }
+      }
+    }else{
+      await F.signInAnonymously(fbAuth);
+    }
 
-        currentRoom = roomId;
-        loadEl.textContent = '';
-        document.getElementById('firebase-gate').style.display = 'none';
+    // 登入成功
+    roomId=room;
+    loadEl.textContent='';
+    document.getElementById('gate').style.display='none';
 
-        // 更新狀態列
-        const dot = document.getElementById('status-dot');
-        dot.classList.add(isJudge ? 'judge' : 'online');
-        document.getElementById('status-text').textContent = `房間：${roomId}`;
-        document.getElementById('status-role').textContent = isJudge ? '⚔️ 裁判組' : '👁️ 觀眾';
-        document.getElementById('status-role').style.color = isJudge ? 'var(--accent-orange)' : 'var(--accent)';
+    // 更新狀態列
+    document.getElementById('sdot').className='sdot '+(isJudge?'judge':'viewer');
+    document.getElementById('stxt').textContent='房間：'+roomId;
+    document.getElementById('srole').textContent=isJudge?'⚔️ 裁判組':'👁️ 觀眾';
+    document.getElementById('srole').style.color=isJudge?'var(--orange)':'var(--green)';
 
-        // 觀眾：鎖定所有輸入
-        if (!isJudge) {
-            applyViewerLock();
+    // 觀眾：鎖定
+    if(!isJudge) lockViewer();
+
+    // 開始監聽
+    startListener();
+
+    // 裁判：嘗試恢復
+    if(isJudge){
+      const snap=await F.getDoc(F.doc(fbDb,'rooms',roomId));
+      if(snap.exists()&&snap.data().gs){
+        const gs=snap.data().gs;
+        if(gs.phase&&gs.phase!=='setup'){
+          if(confirm('偵測到此房間有進行中的賽事，是否恢復？')){
+            loadState(gs);
+          }
         }
-
-        // 開始監聽 Firestore
-        startFirestoreListener();
-
-        // 裁判：嘗試載入已有狀態
-        if (isJudge) {
-            const snap = await getDoc(doc(fbDb, 'rooms', currentRoom));
-            if (snap.exists() && snap.data().gameState) {
-                const loaded = snap.data().gameState;
-                if (loaded.phase && loaded.phase !== 'setup') {
-                    if (confirm('偵測到此房間有進行中的賽事，是否恢復？')) {
-                        restoreFromFirestore(loaded);
-                    }
-                }
-            }
-        }
-
-    } catch(e) {
-        console.error(e);
-        loadEl.textContent = '';
-        errEl.textContent = '連線失敗：' + (e.message || e.code || '未知錯誤');
-    }
-}
-
-function startFirestoreListener() {
-    const { getFirestore, doc, onSnapshot } = window._fbModules;
-    if (unsubscribeListener) unsubscribeListener();
-    const roomRef = doc(fbDb, 'rooms', currentRoom);
-    unsubscribeListener = onSnapshot(roomRef, (snap) => {
-        if (!snap.exists()) return;
-        if (_ignoreNextSnapshot) { _ignoreNextSnapshot = false; return; }
-        const data = snap.data();
-        if (data.gameState) {
-            restoreFromFirestore(data.gameState);
-        }
-    });
-}
-
-async function pushToFirestore(state) {
-    if (!fbDb || !currentRoom || !isJudge) return;
-    const { doc, setDoc } = window._fbModules;
-    _ignoreNextSnapshot = true;
-    try {
-        await setDoc(doc(fbDb, 'rooms', currentRoom), { gameState: state }, { merge: true });
-        flashSyncIndicator();
-    } catch(e) {
-        console.error('Firestore 寫入失敗', e);
-    }
-}
-
-function flashSyncIndicator() {
-    const el = document.getElementById('sync-indicator');
-    el.classList.add('show');
-    clearTimeout(el._timer);
-    el._timer = setTimeout(() => el.classList.remove('show'), 2000);
-}
-
-function leaveRoom() {
-    if (unsubscribeListener) { unsubscribeListener(); unsubscribeListener = null; }
-    if (fbAuth) fbAuth.signOut && fbAuth.signOut();
-    fbApp = null; fbAuth = null; fbDb = null; currentRoom = '';
-    // 停止 MutationObserver
-    if (window._viewerObserver) { window._viewerObserver.disconnect(); window._viewerObserver = null; }
-    // 重新啟用所有被鎖定的元素
-    document.querySelectorAll('input[disabled], select[disabled], button[disabled]').forEach(el => {
-        el.disabled = false;
-    });
-    document.getElementById('viewer-lock-overlay').classList.remove('active');
-    document.getElementById('firebase-gate').style.display = 'flex';
-    document.getElementById('firebase-gate').style.flexDirection = 'column';
-    document.getElementById('firebase-gate').style.alignItems = 'center';
-    document.getElementById('firebase-gate').style.justifyContent = 'center';
-    document.getElementById('status-dot').className = 'status-dot';
-    document.getElementById('status-text').textContent = '未連線';
-    document.getElementById('status-role').textContent = '';
-    // 重置回設定畫面
-    document.getElementById('setup-section').classList.remove('hidden');
-    document.getElementById('main-header').classList.remove('hidden');
-    document.getElementById('fixed-control').classList.add('hidden');
-    document.getElementById('arena-section').classList.add('hidden');
-    document.getElementById('leaderboard-section').classList.add('hidden');
-}
-
-function applyViewerLock() {
-    document.getElementById('viewer-lock-overlay').classList.add('active');
-    const EXEMPT_IDS = new Set(['leave-room-btn']);
-    function lockEl(el) {
-        if (EXEMPT_IDS.has(el.id)) return;
-        if (el.closest('[data-html2canvas-ignore]')) return;
-        el.disabled = true;
-        el.setAttribute('data-viewer-locked', '1');
-    }
-    document.querySelectorAll('input, select, button').forEach(lockEl);
-    // 持續監控新增元素
-    const obs = new MutationObserver(() => {
-        document.querySelectorAll('input:not([data-viewer-locked]), select:not([data-viewer-locked]), button:not([data-viewer-locked])').forEach(lockEl);
-    });
-    obs.observe(document.body, { childList: true, subtree: true, attributes: false });
-    window._viewerObserver = obs;
-}
-
-// ============================================================
-// 原有系統資料
-// ============================================================
-let players = [];
-let currentMode = '';
-let matchesList = [];
-let singleTreeRoot = null;
-let thirdPlaceMatchNode = null;
-let currentActiveMatch = null;
-let rrMatches = [];
-let rrCurrentIndex = 0;
-let historyStack = [];
-
-// ============================================================
-// Firestore 狀態序列化 / 還原
-// ============================================================
-function serializeGameState() {
-    function serPlayer(p) {
-        if (!p) return null;
-        return { name: p.name, isBye: p.isBye || false };
-    }
-    function serMatch(m) {
-        if (!m) return null;
-        return {
-            id: m.id, s1: m.s1, s2: m.s2, isPlayed: m.isPlayed, isThird: m.isThird || false,
-            seed1: m.seed1 || null, seed2: m.seed2 || null,
-            p1: serPlayer(m.p1), p2: serPlayer(m.p2),
-            winner: serPlayer(m.winner), loser: serPlayer(m.loser),
-            nextNodeId: m.nextNode ? m.nextNode.id : null,
-            prevNodeIds: m.prevNodes ? m.prevNodes.map(n => n.id) : []
-        };
-    }
-    return {
-        phase: currentMode ? 'playing' : 'setup',
-        currentMode,
-        players: players.map(p => ({ name: p.name, wins: p.wins, losses: p.losses, scored: p.scored, lost: p.lost, played: p.played })),
-        matchesList: matchesList.map(serMatch),
-        thirdPlaceMatch: serMatch(thirdPlaceMatchNode),
-        currentActiveMatchId: currentActiveMatch ? currentActiveMatch.id : null,
-        rrCurrentIndex,
-        rrMatches: rrMatches.map(m => ({
-            p1Name: m.p1.name, p2Name: m.p2.name,
-            s1: m.s1 || null, s2: m.s2 || null
-        })),
-        historyStack: historyStack.slice(-10) // 只存最近10步節省空間
-    };
-}
-
-function restoreFromFirestore(state) {
-    if (!state || !state.phase) return;
-    if (state.phase === 'setup') return;
-
-    // 還原選手
-    players = state.players.map(p => ({...p}));
-
-    currentMode = state.currentMode;
-
-    if (currentMode === 'round-robin') {
-        rrCurrentIndex = state.rrCurrentIndex;
-        rrMatches = state.rrMatches.map(rm => ({
-            p1: players.find(p => p.name === rm.p1Name) || { name: rm.p1Name },
-            p2: players.find(p => p.name === rm.p2Name) || { name: rm.p2Name },
-            s1: rm.s1, s2: rm.s2
-        }));
-        _restoreUI();
-        document.getElementById('rr-canvas').classList.remove('hidden');
-        document.getElementById('leaderboard-section').classList.remove('hidden');
-        updateLeaderboard();
-        if (rrCurrentIndex < rrMatches.length) {
-            loadRRMatch();
-        } else {
-            document.getElementById('active-scoring-zone').classList.add('hidden');
-            document.getElementById('finished-zone').classList.remove('hidden');
-        }
-        return;
+      }
     }
 
-    // 還原 matchesList
-    matchesList = [];
-    thirdPlaceMatchNode = null;
-    singleTreeRoot = null;
-
-    state.matchesList.forEach(sm => {
-        let node = {
-            id: sm.id, s1: sm.s1, s2: sm.s2, isPlayed: sm.isPlayed, isThird: sm.isThird,
-            seed1: sm.seed1, seed2: sm.seed2,
-            p1: null, p2: null, winner: null, loser: null,
-            nextNode: null, prevNodes: []
-        };
-        matchesList.push(node);
-    });
-
-    // 還原連結
-    state.matchesList.forEach((sm, i) => {
-        let node = matchesList[i];
-        node.p1 = _resolvePlayer(sm.p1);
-        node.p2 = _resolvePlayer(sm.p2);
-        node.winner = _resolvePlayer(sm.winner);
-        node.loser = _resolvePlayer(sm.loser);
-        if (sm.nextNodeId) node.nextNode = matchesList.find(m => m.id === sm.nextNodeId) || null;
-        node.prevNodes = sm.prevNodeIds.map(id => matchesList.find(m => m.id === id)).filter(Boolean);
-    });
-
-    if (state.thirdPlaceMatch) {
-        let tm = state.thirdPlaceMatch;
-        thirdPlaceMatchNode = {
-            id: tm.id, s1: tm.s1, s2: tm.s2, isPlayed: tm.isPlayed, isThird: true,
-            p1: _resolvePlayer(tm.p1), p2: _resolvePlayer(tm.p2),
-            winner: _resolvePlayer(tm.winner), loser: _resolvePlayer(tm.loser),
-            nextNode: null, prevNodes: []
-        };
-    }
-
-    // 單翼：找根節點（沒有 nextNode 的非 third 節點）
-    if (currentMode === 'elim-single') {
-        singleTreeRoot = matchesList.find(m => !m.nextNode && !m.isThird) || null;
-    }
-
-    currentActiveMatch = state.currentActiveMatchId
-        ? (matchesList.find(m => m.id === state.currentActiveMatchId) || thirdPlaceMatchNode)
-        : null;
-
-    _restoreUI();
-    redrawArena();
-    updateLeaderboard();
-
-    const allDone = !currentActiveMatch ||
-        (matchesList.every(m => m.isPlayed) && (!thirdPlaceMatchNode || thirdPlaceMatchNode.isPlayed));
-
-    if (allDone || !state.currentActiveMatchId) {
-        document.getElementById('active-scoring-zone').classList.add('hidden');
-        document.getElementById('finished-zone').classList.remove('hidden');
-        document.getElementById('leaderboard-section').classList.remove('hidden');
-        if (currentMode === 'elim-double') fillDoublePodium();
-    } else if (currentActiveMatch) {
-        document.getElementById('active-scoring-zone').classList.remove('hidden');
-        document.getElementById('finished-zone').classList.add('hidden');
-        document.getElementById('leaderboard-section').classList.add('hidden');
-        document.getElementById('match-label').innerText = currentActiveMatch.isThird ? '【季軍爭奪賽】' : '【當前對戰】';
-        document.getElementById('p1-name-disp').innerText = currentActiveMatch.p1 ? currentActiveMatch.p1.name : '-';
-        document.getElementById('p2-name-disp').innerText = currentActiveMatch.p2 ? currentActiveMatch.p2.name : '-';
-        document.getElementById('p1-score-input').value = 0;
-        document.getElementById('p2-score-input').value = 0;
-        setTimeout(() => {
-            let box = document.getElementById('mb-' + currentActiveMatch.id);
-            if (box) { box.classList.add('active'); box.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }); }
-        }, 100);
-    }
+  }catch(e){
+    console.error(e);
+    loadEl.textContent='';
+    errEl.textContent='連線失敗：'+(e.message||e.code||'未知錯誤');
+  }
 }
 
-function _resolvePlayer(sp) {
-    if (!sp) return null;
-    if (sp.isBye) return { name: sp.name, isBye: true };
-    return players.find(p => p.name === sp.name) || { name: sp.name };
+function startListener(){
+  const F=window.__FB;
+  if(unsub){unsub();unsub=null;}
+  const ref=F.doc(fbDb,'rooms',roomId);
+  unsub=F.onSnapshot(ref,snap=>{
+    if(!snap.exists())return;
+    if(skipNext){skipNext=false;return;}
+    const d=snap.data();
+    if(d&&d.gs) loadState(d.gs);
+  });
 }
 
-function _restoreUI() {
-    document.getElementById('setup-section').classList.add('hidden');
-    document.getElementById('main-header').classList.add('hidden');
-    document.getElementById('fixed-control').classList.remove('hidden');
-    document.getElementById('arena-section').classList.remove('hidden');
-    document.getElementById('double-wing-canvas').classList.toggle('hidden', currentMode !== 'elim-double');
-    document.getElementById('single-wing-canvas').classList.toggle('hidden', currentMode !== 'elim-single');
-    document.getElementById('rr-canvas').classList.toggle('hidden', currentMode !== 'round-robin');
-    renderPlayerList();
+async function push(){
+  if(!fbDb||!roomId||!isJudge)return;
+  const F=window.__FB;
+  skipNext=true;
+  try{
+    await F.setDoc(F.doc(fbDb,'rooms',roomId),{gs:dumpState()},{merge:true});
+    const el=document.getElementById('sync');
+    el.classList.add('on');
+    clearTimeout(el._t);
+    el._t=setTimeout(()=>el.classList.remove('on'),2000);
+  }catch(e){console.error('push fail',e);}
 }
 
-// ============================================================
-// 原有遊戲邏輯（保留原版，加入 pushToFirestore 時機）
-// ============================================================
-function addManualPlayer() {
-    if (!isJudge) return;
-    const input = document.getElementById('manualInput');
-    const name = input.value.trim();
-    if (name) { players.push(createPlayerObj(name)); input.value = ''; renderPlayerList(); }
-}
-function addBatchPlayers() {
-    if (!isJudge) return;
-    const count = parseInt(document.getElementById('batchInput').value);
-    if (isNaN(count) || count < 2) return alert("請輸入有效人數！");
-    if (count > 500) return alert("單次上限128人！");
-    let maxId = 0;
-    players.forEach(p => { let m = p.name.match(/^選手\s*(\d+)$/); if(m && parseInt(m[1])>maxId) maxId=parseInt(m[1]); });
-    for (let i = 1; i <= count; i++) players.push(createPlayerObj(`選手 ${maxId + i}`));
-    document.getElementById('batchInput').value = ''; renderPlayerList();
-}
-function clearAllPlayers() {
-    if (!isJudge) return;
-    if (players.length > 0 && confirm("確定清空名單？")) { players = []; renderPlayerList(); }
-}
-function removePlayer(idx) { if (!isJudge) return; players.splice(idx, 1); renderPlayerList(); }
-function createPlayerObj(name) { return { name, wins: 0, losses: 0, scored: 0, lost: 0, played: 0 }; }
-function renderPlayerList() {
-    const list = document.getElementById('playerList'); list.innerHTML = '';
-    players.forEach((p, i) => list.innerHTML += `<li><span>${p.name}</span>${isJudge ? `<button class="btn-danger" style="padding:4px 10px; font-size:12px;" onclick="removePlayer(${i})">刪除</button>` : ''}</li>`);
-    document.getElementById('player-count-display').innerText = players.length;
+function leaveRoom(){
+  if(unsub){unsub();unsub=null;}
+  if(viewerObserver){viewerObserver.disconnect();viewerObserver=null;}
+  if(fbAuth){try{fbAuth.signOut();}catch(e){}}
+  fbApp=null;fbAuth=null;fbDb=null;roomId='';
+
+  // 解鎖所有元素
+  document.querySelectorAll('[data-vlocked]').forEach(el=>{
+    el.disabled=false;el.removeAttribute('data-vlocked');
+  });
+  document.getElementById('veil').style.display='none';
+
+  // 重設狀態列
+  document.getElementById('sdot').className='sdot';
+  document.getElementById('stxt').textContent='未連線';
+  document.getElementById('srole').textContent='';
+
+  // 回到設定畫面
+  backToMenu();
+
+  // 顯示 gate
+  document.getElementById('gate').style.display='flex';
 }
 
-function backToMenu() {
-    document.getElementById('setup-section').classList.remove('hidden');
-    document.getElementById('main-header').classList.remove('hidden');
-    document.getElementById('fixed-control').classList.add('hidden');
-    document.getElementById('arena-section').classList.add('hidden');
-    document.getElementById('leaderboard-section').classList.add('hidden');
-    window.scrollTo(0, 0);
+function lockViewer(){
+  document.getElementById('veil').style.display='block';
+  function lock(el){
+    if(el.id==='leavebtn')return;
+    if(el.closest('[data-html2canvas-ignore]'))return;
+    if(el.getAttribute('data-vlocked'))return;
+    el.disabled=true;
+    el.setAttribute('data-vlocked','1');
+  }
+  document.querySelectorAll('input,select,button').forEach(lock);
+  viewerObserver=new MutationObserver(()=>{
+    document.querySelectorAll('input:not([data-vlocked]),select:not([data-vlocked]),button:not([data-vlocked])').forEach(lock);
+  });
+  viewerObserver.observe(document.body,{childList:true,subtree:true});
 }
 
-function startTournament() {
-    if (!isJudge) return;
-    if (players.length < 2) return alert("至少需要 2 人！");
-    currentMode = document.getElementById('tournamentMode').value;
-    if (currentMode === 'elim-double' && players.length > 8) return alert("雙翼模式最多支援 8 人，請改選【單翼淘汰賽】！");
-
-    players.forEach(p => { p.wins=0; p.losses=0; p.scored=0; p.lost=0; p.played=0; });
-    matchesList = []; thirdPlaceMatchNode = null; currentActiveMatch = null;
-    historyStack = [];
-    document.getElementById('undo-btn').disabled = true;
-    document.getElementById('undo-btn-finish').disabled = true;
-
-    document.getElementById('setup-section').classList.add('hidden');
-    document.getElementById('main-header').classList.add('hidden');
-    document.getElementById('fixed-control').classList.remove('hidden');
-    document.getElementById('active-scoring-zone').classList.remove('hidden');
-    document.getElementById('finished-zone').classList.add('hidden');
-    document.getElementById('arena-section').classList.remove('hidden');
-    document.getElementById('double-wing-canvas').classList.add('hidden');
-    document.getElementById('single-wing-canvas').classList.add('hidden');
-    document.getElementById('rr-canvas').classList.add('hidden');
-
-    if (currentMode === 'round-robin') {
-        document.getElementById('rr-canvas').classList.remove('hidden');
-        document.getElementById('leaderboard-section').classList.remove('hidden');
-        initRoundRobin();
-    } else if (currentMode === 'elim-double') {
-        document.getElementById('double-wing-canvas').classList.remove('hidden');
-        initDoubleWing();
-    } else if (currentMode === 'elim-single') {
-        document.getElementById('single-wing-canvas').classList.remove('hidden');
-        initSingleWing();
-    }
+// ══════════════════════════════════════════════
+// 狀態序列化 / 還原
+// ══════════════════════════════════════════════
+function dumpState(){
+  function dp(p){return p?{n:p.name,b:p.isBye||false}:null;}
+  function dm(m){
+    if(!m)return null;
+    return{id:m.id,s1:m.s1,s2:m.s2,played:m.isPlayed,third:m.isThird||false,
+      sd1:m.seed1||null,sd2:m.seed2||null,
+      p1:dp(m.p1),p2:dp(m.p2),win:dp(m.winner),lose:dp(m.loser),
+      nid:m.nextNode?m.nextNode.id:null,
+      pids:m.prevNodes?m.prevNodes.map(x=>x.id):[]};
+  }
+  return{
+    phase:mode?'playing':'setup',mode,
+    players:players.map(p=>({...p})),
+    matches:matches.map(dm),
+    third:dm(thirdNode),
+    amid:activeMatch?activeMatch.id:null,
+    rridx:rrIdx,
+    rrlist:rrList.map(m=>({p1:m.p1.name,p2:m.p2.name,s1:m.s1,s2:m.s2})),
+    hist:history.slice(-8)
+  };
 }
 
-function saveState() {
-    let state = {
-        players: players.map(p => ({...p})),
-        rrCurrentIndex,
-        rrMatches: rrMatches.map(m => ({ s1: m.s1, s2: m.s2 })),
-        matchesList: matchesList.map(m => ({
-            id: m.id, s1: m.s1, s2: m.s2, isPlayed: m.isPlayed,
-            p1: m.p1 ? {name: m.p1.name, isBye: m.p1.isBye} : null,
-            p2: m.p2 ? {name: m.p2.name, isBye: m.p2.isBye} : null,
-            winner: m.winner ? {name: m.winner.name, isBye: m.winner.isBye} : null,
-            loser: m.loser ? {name: m.loser.name, isBye: m.loser.isBye} : null
-        })),
-        thirdPlaceMatchNode: thirdPlaceMatchNode ? {
-            s1: thirdPlaceMatchNode.s1, s2: thirdPlaceMatchNode.s2, isPlayed: thirdPlaceMatchNode.isPlayed,
-            p1: thirdPlaceMatchNode.p1 ? {name: thirdPlaceMatchNode.p1.name, isBye: thirdPlaceMatchNode.p1.isBye} : null,
-            p2: thirdPlaceMatchNode.p2 ? {name: thirdPlaceMatchNode.p2.name, isBye: thirdPlaceMatchNode.p2.isBye} : null,
-            winner: thirdPlaceMatchNode.winner ? {name: thirdPlaceMatchNode.winner.name, isBye: thirdPlaceMatchNode.winner.isBye} : null,
-            loser: thirdPlaceMatchNode.loser ? {name: thirdPlaceMatchNode.loser.name, isBye: thirdPlaceMatchNode.loser.isBye} : null
-        } : null
-    };
-    historyStack.push(state);
-    document.getElementById('undo-btn').disabled = false;
-    document.getElementById('undo-btn-finish').disabled = false;
+function rp(sp){
+  if(!sp)return null;
+  if(sp.b)return{name:sp.n,isBye:true};
+  return players.find(p=>p.name===sp.n)||{name:sp.n};
 }
 
-function getPlayerRef(savedP) {
-    if (!savedP) return null;
-    if (savedP.isBye) return { name: savedP.name, isBye: true };
-    return players.find(p => p.name === savedP.name) || null;
-}
+function loadState(s){
+  if(!s||s.phase==='setup')return;
+  players=s.players.map(p=>({...p}));
+  mode=s.mode;
 
-function undoLastMatch() {
-    if (!isJudge) return;
-    if (historyStack.length === 0) return alert("已經是最早的狀態了！");
-    const state = historyStack.pop();
-    state.players.forEach(savedP => {
-        let p = players.find(p => p.name === savedP.name);
-        if (p) { p.wins=savedP.wins; p.losses=savedP.losses; p.scored=savedP.scored; p.lost=savedP.lost; p.played=savedP.played; }
-    });
-    if (currentMode === 'round-robin') {
-        rrCurrentIndex = state.rrCurrentIndex;
-        state.rrMatches.forEach((savedM, i) => { rrMatches[i].s1=savedM.s1; rrMatches[i].s2=savedM.s2; });
-        document.getElementById('active-scoring-zone').classList.remove('hidden');
-        document.getElementById('finished-zone').classList.add('hidden');
-        loadRRMatch();
-    } else {
-        state.matchesList.forEach((savedM, i) => {
-            let m = matchesList[i];
-            m.s1=savedM.s1; m.s2=savedM.s2; m.isPlayed=savedM.isPlayed;
-            m.p1=getPlayerRef(savedM.p1); m.p2=getPlayerRef(savedM.p2);
-            m.winner=getPlayerRef(savedM.winner); m.loser=getPlayerRef(savedM.loser);
-        });
-        if (thirdPlaceMatchNode && state.thirdPlaceMatchNode) {
-            thirdPlaceMatchNode.s1=state.thirdPlaceMatchNode.s1; thirdPlaceMatchNode.s2=state.thirdPlaceMatchNode.s2;
-            thirdPlaceMatchNode.isPlayed=state.thirdPlaceMatchNode.isPlayed;
-            thirdPlaceMatchNode.p1=getPlayerRef(state.thirdPlaceMatchNode.p1);
-            thirdPlaceMatchNode.p2=getPlayerRef(state.thirdPlaceMatchNode.p2);
-            thirdPlaceMatchNode.winner=getPlayerRef(state.thirdPlaceMatchNode.winner);
-            thirdPlaceMatchNode.loser=getPlayerRef(state.thirdPlaceMatchNode.loser);
-        }
-        document.getElementById('active-scoring-zone').classList.remove('hidden');
-        document.getElementById('finished-zone').classList.add('hidden');
-        document.getElementById('leaderboard-section').classList.add('hidden');
-        findNextActiveMatch();
-    }
-    if (historyStack.length === 0) {
-        document.getElementById('undo-btn').disabled = true;
-        document.getElementById('undo-btn-finish').disabled = true;
-    }
-    pushToFirestore(serializeGameState());
-}
+  if(mode==='rr'){
+    rrIdx=s.rridx;
+    rrList=(s.rrlist||[]).map(r=>({
+      p1:players.find(p=>p.name===r.p1)||{name:r.p1},
+      p2:players.find(p=>p.name===r.p2)||{name:r.p2},
+      s1:r.s1,s2:r.s2
+    }));
+    showArena();
+    document.getElementById('rrcanvas').classList.remove('hidden');
+    updateLB();
+    if(rrIdx<rrList.length) loadRR();
+    else finishGame();
+    return;
+  }
 
-function createMatchNode(id, p1, p2) {
-    let node = { id, p1, p2, s1: null, s2: null, winner: null, loser: null, isPlayed: false, nextNode: null, prevNodes: [], isThird: false };
-    matchesList.push(node); return node;
-}
+  // 重建 match 節點
+  matches=[];thirdNode=null;root=null;
+  (s.matches||[]).forEach(sm=>{
+    matches.push({id:sm.id,s1:sm.s1,s2:sm.s2,isPlayed:sm.played,isThird:sm.third,
+      seed1:sm.sd1,seed2:sm.sd2,p1:null,p2:null,winner:null,loser:null,nextNode:null,prevNodes:[]});
+  });
+  (s.matches||[]).forEach((sm,i)=>{
+    const m=matches[i];
+    m.p1=rp(sm.p1);m.p2=rp(sm.p2);m.winner=rp(sm.win);m.loser=rp(sm.lose);
+    if(sm.nid)m.nextNode=matches.find(x=>x.id===sm.nid)||null;
+    m.prevNodes=sm.pids.map(id=>matches.find(x=>x.id===id)).filter(Boolean);
+  });
+  if(s.third){
+    const tm=s.third;
+    thirdNode={id:tm.id,s1:tm.s1,s2:tm.s2,isPlayed:tm.played,isThird:true,
+      p1:rp(tm.p1),p2:rp(tm.p2),winner:rp(tm.win),loser:rp(tm.lose),nextNode:null,prevNodes:[]};
+  }
+  if(mode==='single') root=matches.find(m=>!m.nextNode&&!m.isThird)||null;
 
-function evalBye(node) {
-    if(!node.isPlayed && node.p1 && node.p2) {
-        if(node.p1.isBye && !node.p2.isBye) { node.winner=node.p2; node.loser=node.p1; node.isPlayed=true; }
-        else if(node.p2.isBye && !node.p1.isBye) { node.winner=node.p1; node.loser=node.p2; node.isPlayed=true; }
-        else if(node.p1.isBye && node.p2.isBye) { node.winner={name:"空位",isBye:true}; node.isPlayed=true; }
-    }
-}
+  activeMatch=s.amid?(matches.find(m=>m.id===s.amid)||thirdNode):null;
 
-function syncTree() {
-    matchesList.forEach(m => {
-        if (m.isPlayed && m.winner && m.nextNode) {
-            if (m.nextNode.prevNodes[0]===m) m.nextNode.p1=m.winner;
-            else if (m.nextNode.prevNodes[1]===m) m.nextNode.p2=m.winner;
-            evalBye(m.nextNode);
-        }
-    });
-    if (thirdPlaceMatchNode && !thirdPlaceMatchNode.isPlayed) {
-        let finals = currentMode==='elim-double' ? matchesList[6] : singleTreeRoot;
-        if (finals && finals.prevNodes.length===2) {
-            let s1=finals.prevNodes[0]; let s2=finals.prevNodes[1];
-            if(s1.isPlayed) thirdPlaceMatchNode.p1=s1.loser;
-            if(s2.isPlayed) thirdPlaceMatchNode.p2=s2.loser;
-        }
-    }
-}
+  showArena();
+  redraw();
+  updateLB();
 
-function findNextActiveMatch() {
-    syncTree(); redrawArena();
-    let found = null;
-    if (thirdPlaceMatchNode && !thirdPlaceMatchNode.isPlayed && thirdPlaceMatchNode.p1 && thirdPlaceMatchNode.p2 && !thirdPlaceMatchNode.p1.isBye && !thirdPlaceMatchNode.p2.isBye) {
-        found = thirdPlaceMatchNode;
-    }
-    if (!found) found = matchesList.find(m => !m.isThird && !m.isPlayed && m.p1 && m.p2 && !m.p1.isBye && !m.p2.isBye);
+  const allDone=!activeMatch||
+    (matches.every(m=>m.isPlayed)&&(!thirdNode||thirdNode.isPlayed));
 
-    if (found) {
-        currentActiveMatch = found;
-        document.getElementById('match-label').innerText = found.isThird ? "【季軍爭奪賽】" : "【當前對戰】";
-        document.getElementById('p1-name-disp').innerText = found.p1.name;
-        document.getElementById('p2-name-disp').innerText = found.p2.name;
-        document.getElementById('p1-score-input').value = 0; document.getElementById('p2-score-input').value = 0;
-        let box = document.getElementById(`mb-${found.id}`);
-        if(box) { setTimeout(()=>{ box.classList.add('active'); box.scrollIntoView({behavior:'smooth',block:'center',inline:'center'}); }, 50); }
-    } else {
-        document.getElementById('active-scoring-zone').classList.add('hidden');
-        document.getElementById('finished-zone').classList.remove('hidden');
-        document.getElementById('leaderboard-section').classList.remove('hidden');
-        if (currentMode==='elim-double') fillDoublePodium();
-        updateLeaderboard();
-        setTimeout(()=>{ window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); }, 100);
-    }
-    // 每次找下一場後同步
-    pushToFirestore(serializeGameState());
-}
-
-function submitGlobalResult() {
-    if (!isJudge) return;
-    if (currentMode==='round-robin') { submitRRResult(); return; }
-    const s1 = parseInt(document.getElementById('p1-score-input').value);
-    const s2 = parseInt(document.getElementById('p2-score-input').value);
-    if (isNaN(s1)||isNaN(s2)||s1===s2) return alert("請輸入有效且不平手的得分！");
-    saveState();
-    let m = currentActiveMatch;
-    m.s1=s1; m.s2=s2; m.isPlayed=true;
-    m.p1.played++; m.p2.played++; m.p1.scored+=s1; m.p2.scored+=s2; m.p1.lost+=s2; m.p2.lost+=s1;
-    if (s1>s2) { m.winner=m.p1; m.loser=m.p2; m.p1.wins++; m.p2.losses++; }
-    else { m.winner=m.p2; m.loser=m.p1; m.p2.wins++; m.p1.losses++; }
-    findNextActiveMatch();
-}
-
-function renderMatchHTML(node, widthStr="220px", isCenter=false) {
-    if(!node) return '';
-    let s1Badge = node.seed1 ? `<div class="seed-box ${node.p1&&!node.p1.isBye?'':'empty'}">${node.seed1}</div>` : '';
-    let s2Badge = node.seed2 ? `<div class="seed-box ${node.p2&&!node.p2.isBye?'':'empty'}">${node.seed2}</div>` : '';
-    let p1IsWinner = node.winner&&node.p1&&node.winner.name===node.p1.name;
-    let p2IsWinner = node.winner&&node.p2&&node.winner.name===node.p2.name;
-    return `<div id="mb-${node.id}" class="match-box" style="width:${widthStr};">
-        <div class="player-row ${p1IsWinner?'winner':''} ${node.p1&&node.p1.isBye?'bye':''}">
-            ${s1Badge}<div class="player-name" style="${isCenter?'text-align:center;':''}">${node.p1?node.p1.name:'等待晉級...'}</div><div class="player-score">${node.s1!==null?node.s1:''}</div>
-        </div>
-        <div class="player-row ${p2IsWinner?'winner':''} ${node.p2&&node.p2.isBye?'bye':''}">
-            ${s2Badge}<div class="player-name" style="${isCenter?'text-align:center;':''}">${node.p2?node.p2.name:'等待晉級...'}</div><div class="player-score">${node.s2!==null?node.s2:''}</div>
-        </div>
-    </div>`;
-}
-
-function initDoubleWing() {
-    let shuffled = [...players].sort(()=>Math.random()-0.5);
-    let byesCount = 8-players.length;
-    let pairs = [];
-    for (let i=0;i<4;i++) {
-        let p1=shuffled.pop();
-        let p2=(i<byesCount)?{name:"輪空 (BYE)",isBye:true}:shuffled.pop();
-        pairs.push([p1,p2]);
-    }
-    let m1=createMatchNode('m1',pairs[0][0],pairs[0][1]); m1.seed1=1; m1.seed2=2;
-    let m2=createMatchNode('m2',pairs[1][0],pairs[1][1]); m2.seed1=3; m2.seed2=4;
-    let m3=createMatchNode('m3',pairs[2][0],pairs[2][1]); m3.seed1=5; m3.seed2=6;
-    let m4=createMatchNode('m4',pairs[3][0],pairs[3][1]); m4.seed1=7; m4.seed2=8;
-    let m5=createMatchNode('m5',null,null); m5.prevNodes=[m1,m2]; m1.nextNode=m5; m2.nextNode=m5;
-    let m6=createMatchNode('m6',null,null); m6.prevNodes=[m3,m4]; m3.nextNode=m6; m4.nextNode=m6;
-    let m7=createMatchNode('m7',null,null); m7.prevNodes=[m5,m6]; m5.nextNode=m7; m6.nextNode=m7;
-    let m8=createMatchNode('m8',null,null); m8.isThird=true; thirdPlaceMatchNode=m8;
-    [m1,m2,m3,m4].forEach(evalBye);
-    findNextActiveMatch();
-}
-
-function fillDoublePodium() {
-    let m7=matchesList[6]; let m8=matchesList[7];
-    document.getElementById('pod-1').innerText=m7.winner?m7.winner.name:'-';
-    document.getElementById('pod-2').innerText=m7.loser?m7.loser.name:'-';
-    document.getElementById('pod-3').innerText=m8.winner?m8.winner.name:'-';
-    document.getElementById('pod-4').innerText=m8.loser?m8.loser.name:'-';
-}
-
-function initSingleWing() {
-    let np=Math.pow(2,Math.ceil(Math.log2(players.length)));
-    let numByes=np-players.length;
-    let shuffled=[...players].sort(()=>Math.random()-0.5);
-    let currentLayer=[];
-    for(let i=0;i<np/2;i++) {
-        let p1=shuffled.pop();
-        let p2=(i<numByes)?{name:"輪空 (BYE)",isBye:true}:shuffled.pop();
-        let n=createMatchNode(`s_${i}`,p1,p2); evalBye(n); currentLayer.push(n);
-    }
-    let idCounter=np/2;
-    while(currentLayer.length>1) {
-        let nextLayer=[];
-        for(let i=0;i<currentLayer.length;i+=2) {
-            let parent=createMatchNode(`s_${idCounter++}`,null,null);
-            let c1=currentLayer[i]; let c2=currentLayer[i+1];
-            parent.prevNodes=[c1,c2]; c1.nextNode=parent; c2.nextNode=parent; nextLayer.push(parent);
-        }
-        currentLayer=nextLayer;
-    }
-    singleTreeRoot=currentLayer[0];
-    if(players.length>=4) { thirdPlaceMatchNode=createMatchNode('s_third',null,null); thirdPlaceMatchNode.isThird=true; }
-    findNextActiveMatch();
-}
-
-function buildFlexTreeHTML(node) {
-    if (!node) return '';
-    if (node.prevNodes.length===0) return `<div class="tree-node tree-parent">${renderMatchHTML(node)}</div>`;
-    let childHTML=`<div class="tree-children">`;
-    childHTML+=`<div class="tree-child-wrapper">${buildFlexTreeHTML(node.prevNodes[0])}</div>`;
-    childHTML+=`<div class="tree-child-wrapper">${buildFlexTreeHTML(node.prevNodes[1])}</div>`;
-    childHTML+=`</div>`;
-    return `<div class="tree-node">${childHTML}<div class="tree-node tree-parent">${renderMatchHTML(node)}</div></div>`;
-}
-
-function redrawArena() {
-    document.querySelectorAll('.match-box').forEach(b=>b.classList.remove('active'));
-    if (currentMode==='elim-double') {
-        ['m1','m2','m3','m4','m5','m6'].forEach((id,i)=>{ document.getElementById(`${id}-box`).innerHTML=renderMatchHTML(matchesList[i]); });
-        document.getElementById('m7-box').innerHTML=renderMatchHTML(matchesList[6],"220px",true);
-        document.getElementById('m8-box').innerHTML=renderMatchHTML(matchesList[7],"220px",false);
-    } else if (currentMode==='elim-single') {
-        let html=buildFlexTreeHTML(singleTreeRoot);
-        if(thirdPlaceMatchNode) html+=`<div class="single-third-place"><div style="font-size:12px;font-weight:900;color:#475569;margin-bottom:5px;">3RD PLACE</div>${renderMatchHTML(thirdPlaceMatchNode)}</div>`;
-        document.getElementById('single-wing-canvas').innerHTML=html;
-    }
-}
-
-function updateLeaderboard() {
-    let rankScores=new Map();
-    if (currentMode==='elim-single'||currentMode==='elim-double') {
-        players.forEach(p=>rankScores.set(p.name,p.wins));
-        let finalsNode=(currentMode==='elim-double')?matchesList[6]:singleTreeRoot;
-        let thirdNode=(currentMode==='elim-double')?matchesList[7]:thirdPlaceMatchNode;
-        if (finalsNode&&finalsNode.isPlayed) { if(finalsNode.winner) rankScores.set(finalsNode.winner.name,10000); if(finalsNode.loser) rankScores.set(finalsNode.loser.name,9000); }
-        if (thirdNode&&thirdNode.isPlayed) { if(thirdNode.winner) rankScores.set(thirdNode.winner.name,8000); if(thirdNode.loser) rankScores.set(thirdNode.loser.name,7000); }
-    }
-    let sorted=[...players].sort((a,b)=>{
-        if (currentMode==='round-robin') {
-            if (b.wins!==a.wins) return b.wins-a.wins;
-            let aT=a.scored+a.lost, bT=b.scored+b.lost;
-            return (aT>0?a.lost/aT:0)-(bT>0?b.lost/bT:0);
-        } else {
-            let sA=rankScores.get(a.name)||0, sB=rankScores.get(b.name)||0;
-            if (sB!==sA) return sB-sA;
-            let aT=a.scored+a.lost, bT=b.scored+b.lost;
-            return (aT>0?a.lost/aT:0)-(bT>0?b.lost/bT:0);
-        }
-    });
-    const tbody=document.getElementById('leaderboard-body'); tbody.innerHTML='';
-    sorted.forEach((p,i)=>{
-        let totalPts=p.scored+p.lost;
-        const lossRate=totalPts>0?(p.lost/totalPts).toFixed(2):"0.00";
-        const rowClass=(i===0&&p.played>0)?'class="top-rank"':'';
-        tbody.innerHTML+=`<tr ${rowClass}><td>${i+1}</td><td style="font-weight:bold;">${p.name}</td><td style="color:var(--accent);font-weight:bold;">${p.wins}</td><td style="color:#ef4444;">${p.losses}</td><td>${p.scored}</td><td>${p.lost}</td><td style="font-weight:bold;color:var(--accent-orange);">${lossRate}</td></tr>`;
-    });
-}
-
-function initRoundRobin() {
-    rrMatches=[];
-    for(let i=0;i<players.length;i++) for(let j=i+1;j<players.length;j++) rrMatches.push({p1:players[i],p2:players[j]});
-    rrMatches.sort(()=>Math.random()-0.5); rrCurrentIndex=0; loadRRMatch();
-    pushToFirestore(serializeGameState());
-}
-
-function loadRRMatch() {
-    if (rrCurrentIndex>=rrMatches.length) {
-        document.getElementById('active-scoring-zone').classList.add('hidden');
-        document.getElementById('finished-zone').classList.remove('hidden');
-        updateLeaderboard();
-        setTimeout(()=>{ window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); },100);
-        return;
-    }
-    const m=rrMatches[rrCurrentIndex];
-    document.getElementById('match-label').innerText=`輪流戰 ${rrCurrentIndex+1}/${rrMatches.length}`;
-    document.getElementById('p1-name-disp').innerText=m.p1.name;
-    document.getElementById('p2-name-disp').innerText=m.p2.name;
-    document.getElementById('p1-score-input').value=0; document.getElementById('p2-score-input').value=0;
-    updateLeaderboard();
-}
-
-function submitRRResult() {
-    if (!isJudge) return;
-    const s1=parseInt(document.getElementById('p1-score-input').value);
-    const s2=parseInt(document.getElementById('p2-score-input').value);
-    if (isNaN(s1)||isNaN(s2)||s1===s2) return alert("比分無效或不能平手！");
-    saveState();
-    const m=rrMatches[rrCurrentIndex];
-    m.p1.played++; m.p2.played++; m.p1.scored+=s1; m.p2.scored+=s2; m.p1.lost+=s2; m.p2.lost+=s1;
-    if (s1>s2) { m.p1.wins++; m.p2.losses++; } else { m.p2.wins++; m.p1.losses++; }
-    rrCurrentIndex++; loadRRMatch();
-    pushToFirestore(serializeGameState());
-}
-
-function downloadTournamentImage() {
-    const target=document.getElementById('capture-area');
-    const sCanvas=document.getElementById('single-wing-canvas');
-    const ctrl=document.getElementById('fixed-control');
-    const sBar=document.getElementById('status-bar');
-    const osX=window.scrollX; const osY=window.scrollY;
-    const ow=target.style.maxWidth; const oof=sCanvas.style.overflowX; const cDisp=ctrl.style.display;
-    ctrl.style.display='none'; sBar.style.display='none';
-    target.style.maxWidth='none'; target.style.width='1400px'; sCanvas.style.overflowX='visible';
-    window.scrollTo(0,0);
+  if(allDone){
+    finishGame();
+    if(mode==='double')fillPodium();
+  }else if(activeMatch){
+    document.getElementById('fpanel').classList.remove('hidden');
+    document.getElementById('scorezone').classList.remove('hidden');
+    document.getElementById('finzone').classList.add('hidden');
+    document.getElementById('lbsec').classList.add('hidden');
+    document.getElementById('flabel').textContent=activeMatch.isThird?'【季軍爭奪賽】':'【當前對戰】';
+    document.getElementById('fp1').textContent=activeMatch.p1?activeMatch.p1.name:'-';
+    document.getElementById('fp2').textContent=activeMatch.p2?activeMatch.p2.name:'-';
+    document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
     setTimeout(()=>{
-        html2canvas(target,{backgroundColor:'#0f172a',scale:2,logging:false,useCORS:true,width:1400,height:target.scrollHeight,windowWidth:1400,windowHeight:target.scrollHeight,x:0,y:0})
-        .then(canvas=>{
-            target.style.maxWidth=ow; target.style.width='auto'; sCanvas.style.overflowX=oof; ctrl.style.display=cDisp; sBar.style.display=''; window.scrollTo(osX,osY);
-            let a=document.createElement('a'); a.download=`陀螺杯_賽事_${new Date().toISOString().slice(0,10)}.png`; a.href=canvas.toDataURL('image/png'); a.click();
-        }).catch(e=>{
-            target.style.maxWidth=ow; target.style.width='auto'; sCanvas.style.overflowX=oof; ctrl.style.display=cDisp; sBar.style.display=''; window.scrollTo(osX,osY);
-            alert("截圖失敗！");
-        });
+      const b=document.getElementById('b-'+activeMatch.id);
+      if(b){b.classList.add('active');b.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});}
     },100);
+  }
+}
+
+// ══════════════════════════════════════════════
+// 選手管理
+// ══════════════════════════════════════════════
+function addPlayer(){
+  if(!isJudge)return;
+  const v=document.getElementById('manIn').value.trim();
+  if(v){players.push(mkPlayer(v));document.getElementById('manIn').value='';renderList();}
+}
+function batchAdd(){
+  if(!isJudge)return;
+  const n=parseInt(document.getElementById('batchN').value);
+  if(isNaN(n)||n<2)return alert('請輸入有效人數！');
+  if(n>500)return alert('上限500人！');
+  let max=0;
+  players.forEach(p=>{const m=p.name.match(/^選手\s*(\d+)$/);if(m&&+m[1]>max)max=+m[1];});
+  for(let i=1;i<=n;i++)players.push(mkPlayer('選手 '+(max+i)));
+  document.getElementById('batchN').value='';renderList();
+}
+function clearPlayers(){
+  if(!isJudge)return;
+  if(players.length>0&&confirm('確定清空名單？')){players=[];renderList();}
+}
+function removePlayer(i){if(!isJudge)return;players.splice(i,1);renderList();}
+function mkPlayer(name){return{name,wins:0,losses:0,scored:0,lost:0,played:0};}
+function renderList(){
+  const ul=document.getElementById('plist');ul.innerHTML='';
+  players.forEach((p,i)=>{
+    ul.innerHTML+=`<li><span>${p.name}</span>${isJudge?`<button class="bd" style="padding:4px 10px;font-size:12px" onclick="removePlayer(${i})">刪除</button>`:''}</li>`;
+  });
+  document.getElementById('pcount').textContent=players.length;
+}
+
+// ══════════════════════════════════════════════
+// 賽事流程
+// ══════════════════════════════════════════════
+function backToMenu(){
+  document.getElementById('setup').classList.remove('hidden');
+  document.getElementById('hdr').classList.remove('hidden');
+  document.getElementById('fpanel').classList.add('hidden');
+  document.getElementById('arena').classList.add('hidden');
+  document.getElementById('lbsec').classList.add('hidden');
+  window.scrollTo(0,0);
+}
+function showArena(){
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('hdr').classList.add('hidden');
+  document.getElementById('fpanel').classList.remove('hidden');
+  document.getElementById('scorezone').classList.remove('hidden');
+  document.getElementById('finzone').classList.add('hidden');
+  document.getElementById('arena').classList.remove('hidden');
+  document.getElementById('dcanvas').classList.toggle('hidden',mode!=='double');
+  document.getElementById('scanvas').classList.toggle('hidden',mode!=='single');
+  document.getElementById('rrcanvas').classList.toggle('hidden',mode!=='rr');
+}
+
+function startTournament(){
+  if(!isJudge)return;
+  if(players.length<2)return alert('至少需要 2 人！');
+  mode=document.getElementById('mode').value;
+  if(mode==='double'&&players.length>8)return alert('雙翼模式最多 8 人，請改選單翼！');
+  players.forEach(p=>{p.wins=0;p.losses=0;p.scored=0;p.lost=0;p.played=0;});
+  matches=[];thirdNode=null;activeMatch=null;history=[];
+  document.getElementById('undobtn').disabled=true;
+  document.getElementById('undobtn2').disabled=true;
+  showArena();
+  if(mode==='rr')initRR();
+  else if(mode==='double')initDouble();
+  else initSingle();
+}
+
+// ── 上一步 ──
+function saveHist(){
+  history.push({
+    players:players.map(p=>({...p})),
+    rridx:rrIdx,
+    rrsnap:rrList.map(m=>({s1:m.s1,s2:m.s2})),
+    msnap:matches.map(m=>({id:m.id,s1:m.s1,s2:m.s2,played:m.isPlayed,
+      p1:m.p1?{n:m.p1.name,b:m.p1.isBye}:null,
+      p2:m.p2?{n:m.p2.name,b:m.p2.isBye}:null,
+      win:m.winner?{n:m.winner.name,b:m.winner.isBye}:null,
+      lose:m.loser?{n:m.loser.name,b:m.loser.isBye}:null})),
+    tsnap:thirdNode?{s1:thirdNode.s1,s2:thirdNode.s2,played:thirdNode.isPlayed,
+      p1:thirdNode.p1?{n:thirdNode.p1.name,b:thirdNode.p1.isBye}:null,
+      p2:thirdNode.p2?{n:thirdNode.p2.name,b:thirdNode.p2.isBye}:null,
+      win:thirdNode.winner?{n:thirdNode.winner.name,b:thirdNode.winner.isBye}:null,
+      lose:thirdNode.loser?{n:thirdNode.loser.name,b:thirdNode.loser.isBye}:null}:null
+  });
+  document.getElementById('undobtn').disabled=false;
+  document.getElementById('undobtn2').disabled=false;
+}
+
+function undoLast(){
+  if(!isJudge)return;
+  if(history.length===0)return alert('已是最早狀態！');
+  const h=history.pop();
+  h.players.forEach(sp=>{const p=players.find(x=>x.name===sp.name);if(p)Object.assign(p,sp);});
+  if(mode==='rr'){
+    rrIdx=h.rridx;
+    h.rrsnap.forEach((s,i)=>{rrList[i].s1=s.s1;rrList[i].s2=s.s2;});
+    document.getElementById('scorezone').classList.remove('hidden');
+    document.getElementById('finzone').classList.add('hidden');
+    loadRR();
+  }else{
+    function res(sp){if(!sp)return null;if(sp.b)return{name:sp.n,isBye:true};return players.find(p=>p.name===sp.n)||null;}
+    h.msnap.forEach((sm,i)=>{
+      const m=matches[i];m.s1=sm.s1;m.s2=sm.s2;m.isPlayed=sm.played;
+      m.p1=res(sm.p1);m.p2=res(sm.p2);m.winner=res(sm.win);m.loser=res(sm.lose);
+    });
+    if(thirdNode&&h.tsnap){
+      const t=h.tsnap;thirdNode.s1=t.s1;thirdNode.s2=t.s2;thirdNode.isPlayed=t.played;
+      thirdNode.p1=res(t.p1);thirdNode.p2=res(t.p2);thirdNode.winner=res(t.win);thirdNode.loser=res(t.lose);
+    }
+    document.getElementById('scorezone').classList.remove('hidden');
+    document.getElementById('finzone').classList.add('hidden');
+    document.getElementById('lbsec').classList.add('hidden');
+    nextMatch();
+  }
+  if(history.length===0){document.getElementById('undobtn').disabled=true;document.getElementById('undobtn2').disabled=true;}
+  push();
+}
+
+// ── Match node ──
+function mkMatch(id,p1,p2){
+  const n={id,p1,p2,s1:null,s2:null,winner:null,loser:null,isPlayed:false,nextNode:null,prevNodes:[],isThird:false};
+  matches.push(n);return n;
+}
+function evalBye(n){
+  if(n.isPlayed||!n.p1||!n.p2)return;
+  if(n.p1.isBye&&!n.p2.isBye){n.winner=n.p2;n.loser=n.p1;n.isPlayed=true;}
+  else if(n.p2.isBye&&!n.p1.isBye){n.winner=n.p1;n.loser=n.p2;n.isPlayed=true;}
+  else if(n.p1.isBye&&n.p2.isBye){n.winner={name:'空位',isBye:true};n.isPlayed=true;}
+}
+function syncTree(){
+  matches.forEach(m=>{
+    if(m.isPlayed&&m.winner&&m.nextNode){
+      if(m.nextNode.prevNodes[0]===m)m.nextNode.p1=m.winner;
+      else if(m.nextNode.prevNodes[1]===m)m.nextNode.p2=m.winner;
+      evalBye(m.nextNode);
+    }
+  });
+  if(thirdNode&&!thirdNode.isPlayed){
+    const fin=mode==='double'?matches[6]:root;
+    if(fin&&fin.prevNodes.length===2){
+      if(fin.prevNodes[0].isPlayed)thirdNode.p1=fin.prevNodes[0].loser;
+      if(fin.prevNodes[1].isPlayed)thirdNode.p2=fin.prevNodes[1].loser;
+    }
+  }
+}
+
+// ── 找下一場 ──
+function nextMatch(){
+  syncTree();redraw();
+  let found=null;
+  if(thirdNode&&!thirdNode.isPlayed&&thirdNode.p1&&thirdNode.p2&&!thirdNode.p1.isBye&&!thirdNode.p2.isBye)found=thirdNode;
+  if(!found)found=matches.find(m=>!m.isThird&&!m.isPlayed&&m.p1&&m.p2&&!m.p1.isBye&&!m.p2.isBye);
+  if(found){
+    activeMatch=found;
+    document.getElementById('flabel').textContent=found.isThird?'【季軍爭奪賽】':'【當前對戰】';
+    document.getElementById('fp1').textContent=found.p1.name;
+    document.getElementById('fp2').textContent=found.p2.name;
+    document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
+    const b=document.getElementById('b-'+found.id);
+    if(b)setTimeout(()=>{b.classList.add('active');b.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});},50);
+  }else{
+    finishGame();
+    if(mode==='double')fillPodium();
+    updateLB();
+    setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),100);
+  }
+  push();
+}
+
+function finishGame(){
+  document.getElementById('scorezone').classList.add('hidden');
+  document.getElementById('finzone').classList.remove('hidden');
+  document.getElementById('lbsec').classList.remove('hidden');
+}
+
+// ── 比分送出 ──
+function submitScore(){
+  if(!isJudge)return;
+  if(mode==='rr'){submitRR();return;}
+  const s1=parseInt(document.getElementById('fs1').value);
+  const s2=parseInt(document.getElementById('fs2').value);
+  if(isNaN(s1)||isNaN(s2)||s1===s2)return alert('請輸入有效且不能平手的比分！');
+  saveHist();
+  const m=activeMatch;
+  m.s1=s1;m.s2=s2;m.isPlayed=true;
+  m.p1.played++;m.p2.played++;m.p1.scored+=s1;m.p2.scored+=s2;m.p1.lost+=s2;m.p2.lost+=s1;
+  if(s1>s2){m.winner=m.p1;m.loser=m.p2;m.p1.wins++;m.p2.losses++;}
+  else{m.winner=m.p2;m.loser=m.p1;m.p2.wins++;m.p1.losses++;}
+  nextMatch();
+}
+
+// ── 渲染 match box ──
+function renderMB(node,w='220px',center=false){
+  if(!node)return'';
+  const s1b=node.seed1?`<div class="seed ${node.p1&&!node.p1.isBye?'':'empty'}">${node.seed1}</div>`:'';
+  const s2b=node.seed2?`<div class="seed ${node.p2&&!node.p2.isBye?'':'empty'}">${node.seed2}</div>`:'';
+  const w1=node.winner&&node.p1&&node.winner.name===node.p1.name;
+  const w2=node.winner&&node.p2&&node.winner.name===node.p2.name;
+  return`<div id="b-${node.id}" class="mb" style="width:${w}">
+    <div class="pr ${w1?'win':''} ${node.p1?.isBye?'bye':''}">
+      ${s1b}<div class="pname" style="${center?'text-align:center':''}">${node.p1?node.p1.name:'等待晉級...'}</div>
+      <div class="pscore">${node.s1!==null?node.s1:''}</div>
+    </div>
+    <div class="pr ${w2?'win':''} ${node.p2?.isBye?'bye':''}">
+      ${s2b}<div class="pname" style="${center?'text-align:center':''}">${node.p2?node.p2.name:'等待晉級...'}</div>
+      <div class="pscore">${node.s2!==null?node.s2:''}</div>
+    </div>
+  </div>`;
+}
+
+// ── 重繪賽程 ──
+function redraw(){
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('active'));
+  if(mode==='double'){
+    ['m1','m2','m3','m4','m5','m6'].forEach((id,i)=>{
+      document.getElementById('b-'+id).innerHTML=renderMB(matches[i]);
+    });
+    document.getElementById('b-m7').innerHTML=renderMB(matches[6],'220px',true);
+    document.getElementById('b-m8').innerHTML=renderMB(matches[7],'220px',false);
+  }else if(mode==='single'){
+    let html=buildTree(root);
+    if(thirdNode)html+=`<div class="s3rd"><div style="font-size:12px;font-weight:900;color:#475569;margin-bottom:5px">3RD PLACE</div>${renderMB(thirdNode)}</div>`;
+    document.getElementById('scanvas').innerHTML=html;
+  }
+}
+
+function buildTree(n){
+  if(!n)return'';
+  if(!n.prevNodes.length)return`<div class="tnode tparent">${renderMB(n)}</div>`;
+  return`<div class="tnode">
+    <div class="tchildren">
+      <div class="tchild">${buildTree(n.prevNodes[0])}</div>
+      <div class="tchild">${buildTree(n.prevNodes[1])}</div>
+    </div>
+    <div class="tnode tparent">${renderMB(n)}</div>
+  </div>`;
+}
+
+// ── 雙翼 ──
+function initDouble(){
+  let sh=[...players].sort(()=>Math.random()-.5);
+  const byes=8-players.length;
+  const pairs=[];
+  for(let i=0;i<4;i++){
+    const p1=sh.pop();
+    const p2=(i<byes)?{name:'輪空 (BYE)',isBye:true}:sh.pop();
+    pairs.push([p1,p2]);
+  }
+  const m1=mkMatch('m1',pairs[0][0],pairs[0][1]);m1.seed1=1;m1.seed2=2;
+  const m2=mkMatch('m2',pairs[1][0],pairs[1][1]);m2.seed1=3;m2.seed2=4;
+  const m3=mkMatch('m3',pairs[2][0],pairs[2][1]);m3.seed1=5;m3.seed2=6;
+  const m4=mkMatch('m4',pairs[3][0],pairs[3][1]);m4.seed1=7;m4.seed2=8;
+  const m5=mkMatch('m5',null,null);m5.prevNodes=[m1,m2];m1.nextNode=m5;m2.nextNode=m5;
+  const m6=mkMatch('m6',null,null);m6.prevNodes=[m3,m4];m3.nextNode=m6;m4.nextNode=m6;
+  const m7=mkMatch('m7',null,null);m7.prevNodes=[m5,m6];m5.nextNode=m7;m6.nextNode=m7;
+  const m8=mkMatch('m8',null,null);m8.isThird=true;thirdNode=m8;
+  [m1,m2,m3,m4].forEach(evalBye);
+  nextMatch();
+}
+function fillPodium(){
+  const fin=matches[6],t=matches[7];
+  document.getElementById('p1st').textContent=fin.winner?.name||'-';
+  document.getElementById('p2nd').textContent=fin.loser?.name||'-';
+  document.getElementById('p3rd').textContent=t.winner?.name||'-';
+  document.getElementById('p4th').textContent=t.loser?.name||'-';
+}
+
+// ── 單翼 ──
+function initSingle(){
+  const np=Math.pow(2,Math.ceil(Math.log2(players.length)));
+  const byes=np-players.length;
+  const sh=[...players].sort(()=>Math.random()-.5);
+  let layer=[];
+  for(let i=0;i<np/2;i++){
+    const p1=sh.pop();
+    const p2=(i<byes)?{name:'輪空 (BYE)',isBye:true}:sh.pop();
+    const n=mkMatch(`s_${i}`,p1,p2);evalBye(n);layer.push(n);
+  }
+  let ctr=np/2;
+  while(layer.length>1){
+    const nl=[];
+    for(let i=0;i<layer.length;i+=2){
+      const p=mkMatch(`s_${ctr++}`,null,null);
+      p.prevNodes=[layer[i],layer[i+1]];layer[i].nextNode=p;layer[i+1].nextNode=p;nl.push(p);
+    }
+    layer=nl;
+  }
+  root=layer[0];
+  if(players.length>=4){thirdNode=mkMatch('s_third',null,null);thirdNode.isThird=true;}
+  nextMatch();
+}
+
+// ── 循環賽 ──
+function initRR(){
+  rrList=[];
+  for(let i=0;i<players.length;i++)
+    for(let j=i+1;j<players.length;j++)
+      rrList.push({p1:players[i],p2:players[j],s1:null,s2:null});
+  rrList.sort(()=>Math.random()-.5);rrIdx=0;
+  document.getElementById('rrcanvas').classList.remove('hidden');
+  document.getElementById('lbsec').classList.remove('hidden');
+  loadRR();push();
+}
+function loadRR(){
+  if(rrIdx>=rrList.length){finishGame();updateLB();setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),100);return;}
+  const m=rrList[rrIdx];
+  document.getElementById('flabel').textContent=`輪流戰 ${rrIdx+1}/${rrList.length}`;
+  document.getElementById('fp1').textContent=m.p1.name;
+  document.getElementById('fp2').textContent=m.p2.name;
+  document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
+  updateLB();
+}
+function submitRR(){
+  if(!isJudge)return;
+  const s1=parseInt(document.getElementById('fs1').value);
+  const s2=parseInt(document.getElementById('fs2').value);
+  if(isNaN(s1)||isNaN(s2)||s1===s2)return alert('比分無效或不能平手！');
+  saveHist();
+  const m=rrList[rrIdx];
+  m.s1=s1;m.s2=s2;m.p1.played++;m.p2.played++;
+  m.p1.scored+=s1;m.p2.scored+=s2;m.p1.lost+=s2;m.p2.lost+=s1;
+  if(s1>s2){m.p1.wins++;m.p2.losses++;}else{m.p2.wins++;m.p1.losses++;}
+  rrIdx++;loadRR();push();
+}
+
+// ── 排行榜 ──
+function updateLB(){
+  const rs=new Map();
+  if(mode!=='rr'){
+    players.forEach(p=>rs.set(p.name,p.wins));
+    const fin=mode==='double'?matches[6]:root;
+    const t=mode==='double'?matches[7]:thirdNode;
+    if(fin?.isPlayed){if(fin.winner)rs.set(fin.winner.name,10000);if(fin.loser)rs.set(fin.loser.name,9000);}
+    if(t?.isPlayed){if(t.winner)rs.set(t.winner.name,8000);if(t.loser)rs.set(t.loser.name,7000);}
+  }
+  const sorted=[...players].sort((a,b)=>{
+    if(mode==='rr'){
+      if(b.wins!==a.wins)return b.wins-a.wins;
+      const at=a.scored+a.lost,bt=b.scored+b.lost;
+      return (at?a.lost/at:0)-(bt?b.lost/bt:0);
+    }
+    const sa=rs.get(a.name)||0,sb=rs.get(b.name)||0;
+    if(sb!==sa)return sb-sa;
+    const at=a.scored+a.lost,bt=b.scored+b.lost;
+    return (at?a.lost/at:0)-(bt?b.lost/bt:0);
+  });
+  const tb=document.getElementById('lbbody');tb.innerHTML='';
+  sorted.forEach((p,i)=>{
+    const t=p.scored+p.lost;
+    const lr=t?(p.lost/t).toFixed(2):'0.00';
+    tb.innerHTML+=`<tr ${i===0&&p.played?'class="toprow"':''}><td>${i+1}</td><td style="font-weight:bold">${p.name}</td><td style="color:var(--green);font-weight:bold">${p.wins}</td><td style="color:#ef4444">${p.losses}</td><td>${p.scored}</td><td>${p.lost}</td><td style="font-weight:bold;color:var(--orange)">${lr}</td></tr>`;
+  });
+}
+
+// ── 下載海報 ──
+function downloadPoster(){
+  const app=document.getElementById('app');
+  const fp=document.getElementById('fpanel');
+  const sb=document.getElementById('sbar');
+  const sc=document.getElementById('scanvas');
+  const ox=window.scrollX,oy=window.scrollY;
+  const ow=app.style.maxWidth;
+  fp.style.display='none';sb.style.display='none';
+  app.style.maxWidth='none';app.style.width='1400px';sc.style.overflowX='visible';
+  window.scrollTo(0,0);
+  setTimeout(()=>{
+    html2canvas(app,{backgroundColor:'#0f172a',scale:2,logging:false,useCORS:true,
+      width:1400,height:app.scrollHeight,windowWidth:1400,windowHeight:app.scrollHeight,x:0,y:0})
+    .then(c=>{
+      app.style.maxWidth=ow;app.style.width='';sc.style.overflowX='';
+      fp.style.display='';sb.style.display='';window.scrollTo(ox,oy);
+      const a=document.createElement('a');
+      a.download=`陀螺杯_${new Date().toISOString().slice(0,10)}.png`;
+      a.href=c.toDataURL('image/png');a.click();
+    }).catch(()=>{
+      app.style.maxWidth=ow;app.style.width='';sc.style.overflowX='';
+      fp.style.display='';sb.style.display='';window.scrollTo(ox,oy);
+      alert('截圖失敗！');
+    });
+  },150);
 }
 </script>
 </body>
