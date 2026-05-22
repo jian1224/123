@@ -6,7 +6,7 @@
 <meta name="google-site-verification" content="MmdgKjiGkh2kaJpG8hJqVp4lptqJK7gdpAF1c1JbhFc" />
 <title>BEYBLADE X 大賽管理系統</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
+ 
 <!-- Firebase SDK (modular v10) -->
 <script type="module">
 import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -15,14 +15,14 @@ import { getAuth, signInAnonymously,
          createUserWithEmailAndPassword }             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc,
          getDoc, onSnapshot }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+ 
 window.__FB = { initializeApp, getAuth, signInAnonymously,
                 signInWithEmailAndPassword, createUserWithEmailAndPassword,
                 getFirestore, doc, setDoc, getDoc, onSnapshot };
 window.__FB_READY = true;
 window.dispatchEvent(new Event('fb-ready'));
 </script>
-
+ 
 <style>
 :root{
   --bg:#0f172a; --card:#1e293b; --txt:#f8fafc; --muted:#94a3b8;
@@ -36,7 +36,7 @@ h1{font-size:38px;letter-spacing:2px;margin:0;font-weight:900;text-align:center;
 .sub{color:var(--muted);font-size:14px;letter-spacing:4px;text-align:center;margin:5px 0 25px;}
 h2{color:var(--green);border-left:5px solid var(--green);padding-left:12px;font-size:20px;margin:15px 0;}
 .sec{margin-bottom:30px;padding-bottom:15px;border-bottom:1px solid var(--border);}
-
+ 
 input,select{padding:12px 16px;background:#0f172a;color:#fff;border:1px solid var(--border);border-radius:8px;font-size:16px;}
 button{padding:11px 22px;border-radius:8px;border:none;font-size:15px;font-weight:bold;cursor:pointer;transition:.2s;}
 button:disabled{opacity:.4;cursor:not-allowed;}
@@ -46,7 +46,7 @@ button:disabled{opacity:.4;cursor:not-allowed;}
 .bd{background:#ef4444;color:#fff;}
 .bfull{width:100%;padding:14px;font-size:16px;}
 .bsuccess{background:var(--orange);color:#fff;width:100%;font-size:18px;padding:14px;margin-top:15px;}
-
+ 
 /* ── Gate ── */
 #gate{
   position:fixed;inset:0;background:var(--bg);z-index:9999;
@@ -61,7 +61,7 @@ button:disabled{opacity:.4;cursor:not-allowed;}
 .gtab.on{border-color:var(--green);color:var(--green);background:rgba(190,242,100,.1);}
 #gerr{color:#ef4444;font-size:13px;min-height:18px;text-align:center;}
 #gload{color:var(--muted);font-size:13px;text-align:center;}
-
+ 
 /* ── Status bar ── */
 #sbar{display:flex;align-items:center;gap:10px;padding:8px 15px;background:#0f172a;border-radius:8px;border:1px solid var(--border);margin-bottom:15px;font-size:13px;}
 .sdot{width:8px;height:8px;border-radius:50%;background:#475569;flex-shrink:0;}
@@ -70,19 +70,19 @@ button:disabled{opacity:.4;cursor:not-allowed;}
 #srole{font-weight:bold;}
 #sync{font-size:11px;color:#4ade80;opacity:0;transition:opacity .3s;}
 #sync.on{opacity:1;}
-
+ 
 /* ── Viewer overlay ── */
 #veil{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   background:rgba(15,23,42,.95);border:2px solid var(--green);border-radius:12px;
   padding:10px 20px;color:var(--green);font-weight:bold;font-size:14px;z-index:500;
   pointer-events:none;white-space:nowrap;}
-
+ 
 /* ── Setup ── */
 .ctrl-bar{display:flex;flex-wrap:wrap;justify-content:center;gap:15px;align-items:center;background:#0f172a;padding:20px;border-radius:12px;border:1px solid var(--border);margin:20px 0;}
 .cg{display:flex;align-items:center;gap:8px;}
 ul{list-style:none;padding:5px;max-width:500px;margin:15px auto;max-height:300px;overflow-y:auto;background:#0f172a;border-radius:8px;border:1px solid #2d3748;}
 li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);}
-
+ 
 /* ── Fixed panel ── */
 .fpanel{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:1400px;z-index:999;
   background:#0f172a;border:3px solid var(--orange);border-top:none;padding:15px 25px;
@@ -96,7 +96,7 @@ li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;displa
 .fscore{width:70px;padding:8px;font-size:22px;text-align:center;background:#1e293b;color:#fff;border:2px solid var(--border);border-radius:8px;font-weight:bold;}
 .fspacer{width:220px;}
 .padtop{padding-top:90px;}
-
+ 
 /* ── Match box ── */
 .mb{background:var(--match);border:1px solid #94a3b8;border-radius:4px;box-shadow:0 2px 5px #0002;width:220px;position:relative;z-index:2;}
 .mb.active{border:3px solid var(--orange);box-shadow:0 0 15px rgba(249,115,22,.6);transform:scale(1.05);z-index:10;transition:.2s;}
@@ -108,7 +108,7 @@ li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;displa
 .pscore{background:#cbd5e1;width:35px;height:100%;display:flex;justify-content:center;align-items:center;font-size:16px;font-weight:900;}
 .seed{background:var(--green);color:#000;font-weight:900;width:30px;height:100%;display:flex;justify-content:center;align-items:center;font-size:14px;}
 .seed.empty{background:#cbd5e1;}
-
+ 
 /* ── Double wing ── */
 .dcanvas{background:var(--canvas);padding:40px;border-radius:12px;display:flex;justify-content:space-between;align-items:stretch;min-width:1100px;position:relative;overflow-x:auto;}
 .wing{display:flex;width:350px;justify-content:space-between;position:relative;}
@@ -134,7 +134,7 @@ li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;displa
 .pod{display:flex;background:#0f172a;color:#fff;margin:4px 0;transform:skewX(-15deg);overflow:hidden;border:1px solid #fff;box-shadow:2px 2px 0 #0003;}
 .pod-r{background:#334155;color:var(--green);padding:5px 10px;font-weight:900;font-size:13px;width:35px;text-align:center;}
 .pod-n{padding:5px 10px;font-weight:bold;font-size:13px;flex-grow:1;transform:skewX(15deg);text-align:center;}
-
+ 
 /* ── Single wing ── */
 .scanvas{background:var(--canvas);padding:40px;border-radius:12px;overflow-x:auto;display:flex;align-items:center;min-height:400px;}
 .tnode{display:flex;align-items:center;position:relative;}
@@ -145,14 +145,14 @@ li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;displa
 .tparent{margin-left:15px;position:relative;}
 .tparent::before{content:'';position:absolute;left:-15px;top:50%;width:15px;border-top:var(--lw) solid var(--line);}
 .s3rd{margin-left:60px;padding-left:40px;border-left:2px dashed #94a3b8;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-
+ 
 /* ── Misc ── */
 .hidden{display:none!important;}
 table{width:100%;border-collapse:collapse;margin-top:15px;background:#0f172a;border-radius:8px;overflow:hidden;}
 th,td{padding:12px;text-align:center;border-bottom:1px solid var(--border);}
 th{background:var(--card);color:var(--green);}
 .toprow{background:rgba(190,242,100,.08);}
-
+ 
 @media(max-width:768px){
   body{padding:10px;} h1{font-size:28px;}
   .ctrl-bar{flex-direction:column;align-items:stretch;gap:15px;}
@@ -174,7 +174,7 @@ th{background:var(--card);color:var(--green);}
 </style>
 </head>
 <body>
-
+ 
 <!-- ════════════════════════════════════════
      GATE (入口畫面)
 ════════════════════════════════════════ -->
@@ -183,7 +183,7 @@ th{background:var(--card);color:var(--green);}
     <h1>⚡ BEYBLADE X</h1>
     <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v24.0</div>
   </div>
-
+ 
   <div class="gcard">
     <h3>🏟️ 選擇身分與房間</h3>
     <div class="gtabs">
@@ -202,20 +202,20 @@ th{background:var(--card);color:var(--green);}
     <button class="bp bfull" onclick="enterRoom()">進入賽場 ➔</button>
   </div>
 </div>
-
+ 
 <!-- 觀眾提示條 -->
 <div id="veil">👁️ 觀看模式 — 畫面即時同步中，僅供查看</div>
-
+ 
 <!-- ════════════════════════════════════════
      MAIN APP
 ════════════════════════════════════════ -->
 <div class="wrap" id="app">
-
+ 
   <div id="hdr">
     <h1>BEYBLADE X</h1>
     <div class="sub">ベイブレードエックス 賽事系統</div>
   </div>
-
+ 
   <!-- 狀態列 -->
   <div id="sbar">
     <div class="sdot" id="sdot"></div>
@@ -224,7 +224,7 @@ th{background:var(--card);color:var(--green);}
     <span id="sync">✓ 已同步</span>
     <button class="bs" id="leavebtn" style="padding:5px 12px;font-size:12px;margin-left:10px" onclick="leaveRoom()">離開房間</button>
   </div>
-
+ 
   <!-- 1. 選手設定 -->
   <div id="setup" class="sec">
     <h2>1. 參賽選手設定</h2>
@@ -254,7 +254,7 @@ th{background:var(--card);color:var(--green);}
       <button class="bsuccess" onclick="startTournament()">正式產生賽事 ➔</button>
     </div>
   </div>
-
+ 
   <!-- 計分固定面板 -->
   <div id="fpanel" class="fpanel hidden" data-html2canvas-ignore>
     <div class="fnav">
@@ -276,7 +276,7 @@ th{background:var(--card);color:var(--green);}
     </div>
     <div class="fspacer"></div>
   </div>
-
+ 
   <!-- 賽程區域 -->
   <div id="arena" class="sec hidden padtop">
     <!-- 雙翼 -->
@@ -308,13 +308,13 @@ th{background:var(--card);color:var(--green);}
         <div class="col-i"><div id="b-m6"></div></div>
       </div>
     </div>
-
+ 
     <!-- 單翼 -->
     <div id="scanvas" class="scanvas hidden"></div>
     <!-- 循環 -->
     <div id="rrcanvas" class="hidden"></div>
   </div>
-
+ 
   <!-- 排行榜 -->
   <div id="lbsec" class="sec hidden">
     <h2>🏅 賽事戰績結算表</h2>
@@ -326,9 +326,9 @@ th{background:var(--card);color:var(--green);}
       <button class="bp bfull" style="padding:15px" onclick="downloadPoster()">📷 下載對戰海報</button>
     </div>
   </div>
-
+ 
 </div><!-- /wrap -->
-
+ 
 <script>
 // ══════════════════════════════════════════════
 // Firebase 設定（內建，不顯示在畫面上）
@@ -342,7 +342,7 @@ const FB_CFG = {
   appId:"1:982144047140:web:82283a7444800f12f1a0b1",
   measurementId:"G-5V7PG3HGBD"
 };
-
+ 
 // ══════════════════════════════════════════════
 // 全域狀態
 // ══════════════════════════════════════════════
@@ -350,7 +350,7 @@ let fbApp=null, fbAuth=null, fbDb=null;
 let roomId='', isJudge=false, unsub=null;
 let skipNext=false;          // 避免自己寫完又觸發監聽
 let viewerObserver=null;
-
+ 
 let players=[];
 let mode='';
 let matches=[];              // 淘汰賽節點清單
@@ -359,7 +359,7 @@ let thirdNode=null;          // 季軍賽節點
 let activeMatch=null;
 let rrList=[], rrIdx=0;
 let history=[];              // 上一步 stack
-
+ 
 // ══════════════════════════════════════════════
 // GATE 邏輯
 // ══════════════════════════════════════════════
@@ -375,34 +375,34 @@ function pickRole(r){
 document.getElementById('pw-row').style.display='flex';
 document.getElementById('pw-row').style.flexDirection='column';
 document.getElementById('pw-row').style.gap='8px';
-
+ 
 async function enterRoom(){
   const errEl=document.getElementById('gerr');
   const loadEl=document.getElementById('gload');
   errEl.textContent='';
-
+ 
   const room=document.getElementById('g-room').value.trim();
   const pw=document.getElementById('g-pw').value.trim();
   if(!room)return errEl.textContent='請輸入房間 ID！';
   if(isJudge&&!pw)return errEl.textContent='裁判組需輸入密碼！';
-
+ 
   // 等待 Firebase SDK 載入
   if(!window.__FB_READY){
     loadEl.textContent='載入 SDK 中...';
     await new Promise(res=>window.addEventListener('fb-ready',res,{once:true}));
   }
   loadEl.textContent='連線中...';
-
+ 
   try{
     const F=window.__FB;
-
+ 
     // 初始化（每次 leaveRoom 後重建）
     if(!fbApp){
       fbApp=F.initializeApp(FB_CFG,'bey-'+Date.now());
     }
     fbAuth=F.getAuth(fbApp);
     fbDb=F.getFirestore(fbApp);
-
+ 
     if(isJudge){
       const safe=room.replace(/[^a-zA-Z0-9]/g,'').toLowerCase()||'room';
       const email=`judge.${safe}@beyblade-x.com`;
@@ -444,24 +444,24 @@ async function enterRoom(){
     }else{
       await F.signInAnonymously(fbAuth);
     }
-
+ 
     // 登入成功
     roomId=room;
     loadEl.textContent='';
     document.getElementById('gate').style.display='none';
-
+ 
     // 更新狀態列
     document.getElementById('sdot').className='sdot '+(isJudge?'judge':'viewer');
     document.getElementById('stxt').textContent='房間：'+roomId;
     document.getElementById('srole').textContent=isJudge?'⚔️ 裁判組':'👁️ 觀眾';
     document.getElementById('srole').style.color=isJudge?'var(--orange)':'var(--green)';
-
+ 
     // 觀眾：鎖定
     if(!isJudge) lockViewer();
-
+ 
     // 開始監聽
     startListener();
-
+ 
     // 裁判：嘗試恢復
     if(isJudge){
       const snap=await F.getDoc(F.doc(fbDb,'rooms',roomId));
@@ -474,14 +474,14 @@ async function enterRoom(){
         }
       }
     }
-
+ 
   }catch(e){
     console.error(e);
     loadEl.textContent='';
     errEl.textContent='連線失敗：'+(e.message||e.code||'未知錯誤');
   }
 }
-
+ 
 function startListener(){
   const F=window.__FB;
   if(unsub){unsub();unsub=null;}
@@ -493,7 +493,7 @@ function startListener(){
     if(d&&d.gs) loadState(d.gs);
   });
 }
-
+ 
 async function push(){
   if(!fbDb||!roomId||!isJudge)return;
   const F=window.__FB;
@@ -506,31 +506,31 @@ async function push(){
     el._t=setTimeout(()=>el.classList.remove('on'),2000);
   }catch(e){console.error('push fail',e);}
 }
-
+ 
 function leaveRoom(){
   if(unsub){unsub();unsub=null;}
   if(viewerObserver){viewerObserver.disconnect();viewerObserver=null;}
   if(fbAuth){try{fbAuth.signOut();}catch(e){}}
   fbApp=null;fbAuth=null;fbDb=null;roomId='';
-
+ 
   // 解鎖所有元素
   document.querySelectorAll('[data-vlocked]').forEach(el=>{
     el.disabled=false;el.removeAttribute('data-vlocked');
   });
   document.getElementById('veil').style.display='none';
-
+ 
   // 重設狀態列
   document.getElementById('sdot').className='sdot';
   document.getElementById('stxt').textContent='未連線';
   document.getElementById('srole').textContent='';
-
+ 
   // 回到設定畫面
   backToMenu();
-
+ 
   // 顯示 gate
   document.getElementById('gate').style.display='flex';
 }
-
+ 
 function lockViewer(){
   document.getElementById('veil').style.display='block';
   function lock(el){
@@ -546,7 +546,7 @@ function lockViewer(){
   });
   viewerObserver.observe(document.body,{childList:true,subtree:true});
 }
-
+ 
 // ══════════════════════════════════════════════
 // 狀態序列化 / 還原
 // ══════════════════════════════════════════════
@@ -571,18 +571,18 @@ function dumpState(){
     hist:history.slice(-8)
   };
 }
-
+ 
 function rp(sp){
   if(!sp)return null;
   if(sp.b)return{name:sp.n,isBye:true};
   return players.find(p=>p.name===sp.n)||{name:sp.n};
 }
-
+ 
 function loadState(s){
   if(!s||s.phase==='setup')return;
   players=s.players.map(p=>({...p}));
   mode=s.mode;
-
+ 
   if(mode==='rr'){
     rrIdx=s.rridx;
     rrList=(s.rrlist||[]).map(r=>({
@@ -597,7 +597,7 @@ function loadState(s){
     else finishGame();
     return;
   }
-
+ 
   // 重建 match 節點
   matches=[];thirdNode=null;root=null;
   (s.matches||[]).forEach(sm=>{
@@ -616,16 +616,16 @@ function loadState(s){
       p1:rp(tm.p1),p2:rp(tm.p2),winner:rp(tm.win),loser:rp(tm.lose),nextNode:null,prevNodes:[]};
   }
   if(mode==='single') root=matches.find(m=>!m.nextNode&&!m.isThird)||null;
-
+ 
   activeMatch=s.amid?(matches.find(m=>m.id===s.amid)||thirdNode):null;
-
+ 
   showArena();
   redraw();
   updateLB();
-
+ 
   const allDone=!activeMatch||
     (matches.every(m=>m.isPlayed)&&(!thirdNode||thirdNode.isPlayed));
-
+ 
   if(allDone){
     finishGame();
     if(mode==='double')fillPodium();
@@ -644,7 +644,7 @@ function loadState(s){
     },100);
   }
 }
-
+ 
 // ══════════════════════════════════════════════
 // 選手管理
 // ══════════════════════════════════════════════
@@ -676,7 +676,7 @@ function renderList(){
   });
   document.getElementById('pcount').textContent=players.length;
 }
-
+ 
 // ══════════════════════════════════════════════
 // 賽事流程
 // ══════════════════════════════════════════════
@@ -699,7 +699,7 @@ function showArena(){
   document.getElementById('scanvas').classList.toggle('hidden',mode!=='single');
   document.getElementById('rrcanvas').classList.toggle('hidden',mode!=='rr');
 }
-
+ 
 function startTournament(){
   if(!isJudge)return;
   if(players.length<2)return alert('至少需要 2 人！');
@@ -714,7 +714,7 @@ function startTournament(){
   else if(mode==='double')initDouble();
   else initSingle();
 }
-
+ 
 // ── 上一步 ──
 function saveHist(){
   history.push({
@@ -735,7 +735,7 @@ function saveHist(){
   document.getElementById('undobtn').disabled=false;
   document.getElementById('undobtn2').disabled=false;
 }
-
+ 
 function undoLast(){
   if(!isJudge)return;
   if(history.length===0)return alert('已是最早狀態！');
@@ -765,7 +765,7 @@ function undoLast(){
   if(history.length===0){document.getElementById('undobtn').disabled=true;document.getElementById('undobtn2').disabled=true;}
   push();
 }
-
+ 
 // ── Match node ──
 function mkMatch(id,p1,p2){
   const n={id,p1,p2,s1:null,s2:null,winner:null,loser:null,isPlayed:false,nextNode:null,prevNodes:[],isThird:false};
@@ -793,7 +793,7 @@ function syncTree(){
     }
   }
 }
-
+ 
 // ── 找下一場 ──
 function nextMatch(){
   syncTree();redraw();
@@ -816,13 +816,13 @@ function nextMatch(){
   }
   push();
 }
-
+ 
 function finishGame(){
   document.getElementById('scorezone').classList.add('hidden');
   document.getElementById('finzone').classList.remove('hidden');
   document.getElementById('lbsec').classList.remove('hidden');
 }
-
+ 
 // ── 比分送出 ──
 function submitScore(){
   if(!isJudge)return;
@@ -838,7 +838,7 @@ function submitScore(){
   else{m.winner=m.p2;m.loser=m.p1;m.p2.wins++;m.p1.losses++;}
   nextMatch();
 }
-
+ 
 // ── 渲染 match box ──
 function renderMB(node,w='220px',center=false){
   if(!node)return'';
@@ -857,7 +857,7 @@ function renderMB(node,w='220px',center=false){
     </div>
   </div>`;
 }
-
+ 
 // ── 重繪賽程 ──
 function redraw(){
   document.querySelectorAll('.mb').forEach(b=>b.classList.remove('active'));
@@ -873,7 +873,7 @@ function redraw(){
     document.getElementById('scanvas').innerHTML=html;
   }
 }
-
+ 
 function buildTree(n){
   if(!n)return'';
   if(!n.prevNodes.length)return`<div class="tnode tparent">${renderMB(n)}</div>`;
@@ -885,7 +885,7 @@ function buildTree(n){
     <div class="tnode tparent">${renderMB(n)}</div>
   </div>`;
 }
-
+ 
 // ── 雙翼 ──
 function initDouble(){
   let sh=[...players].sort(()=>Math.random()-.5);
@@ -914,7 +914,7 @@ function fillPodium(){
   document.getElementById('p3rd').textContent=t.winner?.name||'-';
   document.getElementById('p4th').textContent=t.loser?.name||'-';
 }
-
+ 
 // ── 單翼 ──
 function initSingle(){
   const np=Math.pow(2,Math.ceil(Math.log2(players.length)));
@@ -939,7 +939,7 @@ function initSingle(){
   if(players.length>=4){thirdNode=mkMatch('s_third',null,null);thirdNode.isThird=true;}
   nextMatch();
 }
-
+ 
 // ── 循環賽 ──
 function initRR(){
   rrList=[];
@@ -972,7 +972,7 @@ function submitRR(){
   if(s1>s2){m.p1.wins++;m.p2.losses++;}else{m.p2.wins++;m.p1.losses++;}
   rrIdx++;loadRR();push();
 }
-
+ 
 // ── 排行榜 ──
 function updateLB(){
   const rs=new Map();
@@ -1001,7 +1001,7 @@ function updateLB(){
     tb.innerHTML+=`<tr ${i===0&&p.played?'class="toprow"':''}><td>${i+1}</td><td style="font-weight:bold">${p.name}</td><td style="color:var(--green);font-weight:bold">${p.wins}</td><td style="color:#ef4444">${p.losses}</td><td>${p.scored}</td><td>${p.lost}</td><td style="font-weight:bold;color:var(--orange)">${lr}</td></tr>`;
   });
 }
-
+ 
 // ── 下載海報 ──
 function downloadPoster(){
   const app=document.getElementById('app');
