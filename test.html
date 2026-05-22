@@ -404,30 +404,43 @@ async function enterRoom(){
     fbDb=F.getFirestore(fbApp);
 
     if(isJudge){
-      // email 格式：judge.{safe房間名}@beyblade-x.com
       const safe=room.replace(/[^a-zA-Z0-9]/g,'').toLowerCase()||'room';
       const email=`judge.${safe}@beyblade-x.com`;
+      let judgeOk=false;
+      // 先嘗試登入
       try{
         await F.signInWithEmailAndPassword(fbAuth,email,pw);
+        judgeOk=true;
       }catch(e1){
-        if(['auth/user-not-found','auth/invalid-credential','auth/invalid-email','auth/invalid-login-credentials'].includes(e1.code)){
-          // 第一次：建立帳號
+        const NEW_USER=['auth/user-not-found','auth/invalid-credential',
+                        'auth/invalid-login-credentials','auth/invalid-email'];
+        if(NEW_USER.includes(e1.code)){
+          // 帳號不存在 → 嘗試建立
           try{
             await F.createUserWithEmailAndPassword(fbAuth,email,pw);
+            judgeOk=true;
           }catch(e2){
+            loadEl.textContent='';
             if(e2.code==='auth/email-already-in-use'){
-              loadEl.textContent='';
-              return errEl.textContent='密碼錯誤！此房間裁判密碼已設定，請輸入正確密碼。';
+              errEl.textContent='密碼錯誤！此房間裁判密碼已設定，請輸入正確密碼。';
+            }else if(e2.code==='auth/weak-password'){
+              errEl.textContent='密碼至少需要 6 個字元！';
+            }else{
+              errEl.textContent='建立帳號失敗：'+e2.code;
             }
-            throw e2;
+            return; // ← 直接停止，不繼續
           }
         }else if(e1.code==='auth/wrong-password'){
           loadEl.textContent='';
-          return errEl.textContent='密碼錯誤！';
+          errEl.textContent='密碼錯誤！';
+          return;
         }else{
-          throw e1;
+          loadEl.textContent='';
+          errEl.textContent='登入失敗：'+e1.code;
+          return;
         }
       }
+      if(!judgeOk){ loadEl.textContent=''; errEl.textContent='裁判登入失敗，請重試。'; return; }
     }else{
       await F.signInAnonymously(fbAuth);
     }
