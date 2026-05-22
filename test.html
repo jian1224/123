@@ -336,6 +336,7 @@ th{background:var(--card);color:var(--green);}
 const FB_CFG = {
   apiKey:"AIzaSyCGM6nO_LqSQI3D3MRS9fbWGHrpCR42QzU",
   authDomain:"beyblade-x-4ff10.firebaseapp.com",
+  databaseURL:"https://beyblade-x-4ff10-default-rtdb.firebaseio.com",
   projectId:"beyblade-x-4ff10",
   storageBucket:"beyblade-x-4ff10.firebasestorage.app",
   messagingSenderId:"982144047140",
@@ -349,6 +350,7 @@ const FB_CFG = {
 let fbApp=null, fbAuth=null, fbDb=null;
 let roomId='', isJudge=false, unsub=null;
 let skipNext=false;          // 避免自己寫完又觸發監聽
+let lastPushTime=0;
 let viewerObserver=null;
 
 let players=[];
@@ -488,7 +490,9 @@ function startListener(){
   const ref=F.doc(fbDb,'rooms',roomId);
   unsub=F.onSnapshot(ref,snap=>{
     if(!snap.exists())return;
-    if(skipNext){skipNext=false;return;}
+    // 裁判自己剛推送的那次跳過（避免回聲），觀眾永遠接收
+    if(isJudge&&skipNext){skipNext=false;return;}
+    skipNext=false;
     const d=snap.data();
     if(d&&d.gs) loadState(d.gs);
   });
@@ -497,14 +501,19 @@ function startListener(){
 async function push(){
   if(!fbDb||!roomId||!isJudge)return;
   const F=window.__FB;
+  const ts=Date.now();
+  lastPushTime=ts;
   skipNext=true;
   try{
-    await F.setDoc(F.doc(fbDb,'rooms',roomId),{gs:dumpState()},{merge:true});
+    await F.setDoc(F.doc(fbDb,'rooms',roomId),{gs:dumpState(),ts},{merge:true});
     const el=document.getElementById('sync');
     el.classList.add('on');
     clearTimeout(el._t);
     el._t=setTimeout(()=>el.classList.remove('on'),2000);
-  }catch(e){console.error('push fail',e);}
+  }catch(e){
+    console.error('push fail',e);
+    skipNext=false; // 失敗時重置，下次收到監聽才能正常更新
+  }
 }
 
 function leaveRoom(){
@@ -631,13 +640,19 @@ function loadState(s){
     if(mode==='double')fillPodium();
   }else if(activeMatch){
     document.getElementById('fpanel').classList.remove('hidden');
-    document.getElementById('scorezone').classList.remove('hidden');
-    document.getElementById('finzone').classList.add('hidden');
-    document.getElementById('lbsec').classList.add('hidden');
     document.getElementById('flabel').textContent=activeMatch.isThird?'【季軍爭奪賽】':'【當前對戰】';
     document.getElementById('fp1').textContent=activeMatch.p1?activeMatch.p1.name:'-';
     document.getElementById('fp2').textContent=activeMatch.p2?activeMatch.p2.name:'-';
-    document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
+    if(isJudge){
+      // 裁判：顯示計分輸入
+      document.getElementById('scorezone').classList.remove('hidden');
+      document.getElementById('finzone').classList.add('hidden');
+      document.getElementById('lbsec').classList.add('hidden');
+      document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
+    }else{
+      // 觀眾：只顯示比賽資訊，隱藏輸入框和按鈕
+      document.getElementById('fs1').closest('.fzone').querySelectorAll('input,button').forEach(el=>el.style.display='none');
+    }
     setTimeout(()=>{
       const b=document.getElementById('b-'+activeMatch.id);
       if(b){b.classList.add('active');b.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});}
@@ -846,7 +861,10 @@ function renderMB(node,w='220px',center=false){
   const s2b=node.seed2?`<div class="seed ${node.p2&&!node.p2.isBye?'':'empty'}">${node.seed2}</div>`:'';
   const w1=node.winner&&node.p1&&node.winner.name===node.p1.name;
   const w2=node.winner&&node.p2&&node.winner.name===node.p2.name;
-  return`<div id="b-${node.id}" class="mb" style="width:${w}">
+  // 裁判可點擊任意場次（已完成的也可重新選）
+  const clickable=isJudge&&node.p1&&node.p2&&!node.p1.isBye&&!node.p2.isBye;
+  const clickAttr=clickable?`onclick="selectMatch('${node.id}')" style="width:${w};cursor:pointer"`:`style="width:${w}"`;
+  return`<div id="b-${node.id}" class="mb" ${clickAttr}>
     <div class="pr ${w1?'win':''} ${node.p1?.isBye?'bye':''}">
       ${s1b}<div class="pname" style="${center?'text-align:center':''}">${node.p1?node.p1.name:'等待晉級...'}</div>
       <div class="pscore">${node.s1!==null?node.s1:''}</div>
@@ -856,6 +874,25 @@ function renderMB(node,w='220px',center=false){
       <div class="pscore">${node.s2!==null?node.s2:''}</div>
     </div>
   </div>`;
+}
+
+// 裁判點擊場次 → 切換到該場
+function selectMatch(id){
+  if(!isJudge)return;
+  const node=matches.find(m=>m.id===id)||(thirdNode&&thirdNode.id===id?thirdNode:null);
+  if(!node||!node.p1||!node.p2||node.p1.isBye||node.p2.isBye)return;
+  activeMatch=node;
+  document.getElementById('scorezone').classList.remove('hidden');
+  document.getElementById('finzone').classList.add('hidden');
+  document.getElementById('fpanel').classList.remove('hidden');
+  document.getElementById('flabel').textContent=node.isThird?'【季軍爭奪賽】':(node.isPlayed?'【重新計分】':'【當前對戰】');
+  document.getElementById('fp1').textContent=node.p1.name;
+  document.getElementById('fp2').textContent=node.p2.name;
+  document.getElementById('fs1').value=node.s1!==null?node.s1:0;
+  document.getElementById('fs2').value=node.s2!==null?node.s2:0;
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('active'));
+  const b=document.getElementById('b-'+id);
+  if(b){b.classList.add('active');b.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});}
 }
 
 // ── 重繪賽程 ──
