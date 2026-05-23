@@ -178,7 +178,7 @@ th{background:var(--card);color:var(--green);}
 <div id="gate">
   <div style="text-align:center">
     <h1>⚡ BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v31.0</div>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v30.0</div>
   </div>
 
   <div class="gcard">
@@ -381,36 +381,6 @@ async function simpleHash(str){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-// 背景驗證裁判密碼（進房後執行，不阻擋畫面）
-async function verifyJudgePassword({room, pw, F}){
-  const pwHash = await simpleHash(pw);
-  const metaRef = F.doc(fbDb, 'rooms', room+'__pw');
-
-  // 用 onSnapshot 監聽一次，連線後自動觸發
-  const unsub = F.onSnapshot(metaRef,
-    async snap => {
-      unsub(); // 只需要一次
-      if(!snap.exists()){
-        // 新房間：寫入密碼 hash
-        try{
-          await F.setDoc(metaRef, {h: pwHash});
-        }catch(e){ console.warn('寫入密碼失敗:', e); }
-      }else{
-        // 比對密碼
-        if(snap.data().h !== pwHash){
-          alert('⚠️ 密碼錯誤！此房間的裁判密碼已設定。\n你將被切換為觀眾模式。');
-          isJudge = false;
-          document.getElementById('srole').textContent = '👁️ 觀眾';
-          document.getElementById('srole').style.color = 'var(--green)';
-          document.getElementById('sdot').className = 'sdot viewer';
-          lockViewer();
-        }
-      }
-    },
-    err => { unsub(); console.warn('密碼驗證失敗:', err); }
-  );
-}
-
 async function enterRoom(){
   const errEl=document.getElementById('gerr');
   const loadEl=document.getElementById('gload');
@@ -437,6 +407,10 @@ async function enterRoom(){
     }
     fbAuth=F.getAuth(fbApp);
     fbDb=F.getFirestore(fbApp);
+
+    // 儲存密碼供背景驗證用
+    window._judgePw = isJudge ? pw : '';
+    judgeVerified = false;
 
     // 所有人匿名登入，等待 auth 穩定
     await new Promise((res,rej)=>{
@@ -471,11 +445,7 @@ async function enterRoom(){
     // 開始監聽
     startListener();
 
-    // 裁判：背景驗證密碼（Firestore 連線穩定後執行）
-    if(isJudge && window._pendingJudgeVerify){
-      verifyJudgePassword(window._pendingJudgeVerify);
-      window._pendingJudgeVerify = null;
-    }
+
 
     // 裁判：嘗試恢復
     if(isJudge){
@@ -497,16 +467,39 @@ async function enterRoom(){
   }
 }
 
+let judgeVerified = false; // 裁判密碼是否已驗證
+
 function startListener(){
   const F=window.__FB;
   if(unsub){unsub();unsub=null;}
   const ref=F.doc(fbDb,'rooms',roomId);
-  unsub=F.onSnapshot(ref,snap=>{
+  unsub=F.onSnapshot(ref, async snap=>{
+    const d = snap.exists() ? snap.data() : {};
+
+    // 裁判密碼驗證（只做一次，利用已有的 onSnapshot 連線）
+    if(isJudge && !judgeVerified){
+      judgeVerified = true;
+      const pwHash = await simpleHash(window._judgePw||'');
+      if(!d._pw){
+        // 新房間：把密碼 hash 寫進去（合併到下次 push 或立即寫）
+        window._judgeHash = pwHash;
+      }else if(d._pw !== pwHash){
+        // 密碼錯誤
+        alert('⚠️ 密碼錯誤！此房間的裁判密碼已設定。
+你將被切換為觀眾模式。');
+        isJudge = false;
+        document.getElementById('srole').textContent = '👁️ 觀眾';
+        document.getElementById('srole').style.color = 'var(--green)';
+        document.getElementById('sdot').className = 'sdot viewer';
+        lockViewer();
+        return;
+      }
+    }
+
     if(!snap.exists())return;
     // 裁判自己剛推送的那次跳過（避免回聲），觀眾永遠接收
     if(isJudge&&skipNext){skipNext=false;return;}
     skipNext=false;
-    const d=snap.data();
     if(d&&d.gs) loadState(d.gs);
   });
 }
@@ -518,7 +511,9 @@ async function push(){
   lastPushTime=ts;
   skipNext=true;
   try{
-    await F.setDoc(F.doc(fbDb,'rooms',roomId),{gs:dumpState(),ts},{merge:true});
+    const payload = {gs:dumpState(),ts};
+    if(window._judgeHash){ payload._pw = window._judgeHash; window._judgeHash = null; }
+    await F.setDoc(F.doc(fbDb,'rooms',roomId),payload,{merge:true});
     const el=document.getElementById('sync');
     el.classList.add('on');
     clearTimeout(el._t);
