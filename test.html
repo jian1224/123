@@ -470,7 +470,8 @@ function enterApp(){
   startListener();
   if(isJudge){
     const F=window.__FB;
-    F.getDoc(F.doc(fbDb,'rooms',roomId)).then(snap=>{
+    const _db=F.getFirestore(fbApp);
+    F.getDoc(F.doc(_db,'rooms',roomId)).then(snap=>{
       if(snap.exists()&&snap.data().gs){
         const gs=snap.data().gs;
         if(gs.phase&&gs.phase!=='setup'){
@@ -489,7 +490,8 @@ let judgeVerified = false; // 裁判密碼是否已驗證
 function startListener(){
   const F=window.__FB;
   if(unsub){unsub();unsub=null;}
-  const ref=F.doc(fbDb,'rooms',roomId);
+  const db=F.getFirestore(fbApp);
+  const ref=F.doc(db,'rooms',roomId);
   unsub=F.onSnapshot(ref, async snap=>{
     const d = snap.exists() ? snap.data() : {};
 
@@ -502,26 +504,21 @@ function startListener(){
 }
 
 async function push(){
-  console.log('[push] fbDb='+!!fbDb+' roomId='+roomId+' isJudge='+isJudge);
-  if(!fbDb||!roomId||!isJudge){
-    console.warn('[push] blocked - fbDb:'+!!fbDb+' roomId:'+roomId+' isJudge:'+isJudge);
-    return;
-  }
+  if(!roomId||!isJudge)return;
   const F=window.__FB;
+  // 每次重新取得最新的 Firestore 實例，避免初始化時機問題
+  const db=F.getFirestore(fbApp);
   const ts=Date.now();
-  lastPushTime=ts;
   skipNext=true;
   try{
-    const payload = {gs:dumpState(),ts};
-    console.log('[push] writing to rooms/'+roomId);
-    await F.setDoc(F.doc(fbDb,'rooms',roomId),payload,{merge:true});
-    console.log('[push] success!');
+    const payload={gs:dumpState(),ts};
+    await F.setDoc(F.doc(db,'rooms',roomId),payload,{merge:true});
     const el=document.getElementById('sync');
     el.classList.add('on');
     clearTimeout(el._t);
     el._t=setTimeout(()=>el.classList.remove('on'),2000);
   }catch(e){
-    console.error('[push] FAILED:', e.code, e.message, e);
+    console.error('[push] FAILED:',e.code,e.message);
     skipNext=false;
   }
 }
@@ -1092,7 +1089,8 @@ async function clearRoomData(){
   if(!confirm('確定要清空此場賽事所有資料嗎？此操作無法復原。'))return;
   try{
     const F=window.__FB;
-    await F.deleteDoc(F.doc(fbDb,'rooms',ROOM_ID));
+    const _db2=F.getFirestore(fbApp);
+    await F.deleteDoc(F.doc(_db2,'rooms',ROOM_ID));
     alert('賽事資料已清空！可以開始新的一場賽事。');
     leaveRoom();
   }catch(e){
