@@ -389,74 +389,88 @@ let history=[];              // 上一步 stack
 const JUDGE_EMAILS = ['yuan01224@gmail.com'];
 const ROOM_ID = 'beyblade-main'; // 固定唯一房間
 
-async function enterRoom(){
+// 初始化 Firebase
+async function initFB(){
+  if(!window.__FB_READY){
+    await new Promise(res=>window.addEventListener('fb-ready',res,{once:true}));
+  }
+  const F=window.__FB;
+  if(!fbApp) fbApp=F.initializeApp(FB_CFG,'bey-'+Date.now());
+  fbAuth=F.getAuth(fbApp);
+  fbDb=F.getFirestore(fbApp);
+  return F;
+}
+
+// 裁判登入（Google）
+async function loginJudge(){
   const errEl=document.getElementById('gerr');
   const loadEl=document.getElementById('gload');
   errEl.textContent='';
-
-  const room=document.getElementById('g-room').value.trim();
-  const pw=document.getElementById('g-pw').value.trim();
-  if(!room)return errEl.textContent='請輸入房間 ID！';
-  if(isJudge&&!pw)return errEl.textContent='裁判組需輸入密碼！';
-
-  // 等待 Firebase SDK 載入
-  if(!window.__FB_READY){
-    loadEl.textContent='載入 SDK 中...';
-    await new Promise(res=>window.addEventListener('fb-ready',res,{once:true}));
-  }
-  loadEl.textContent='連線中...';
-
+  loadEl.textContent='開啟 Google 登入...';
+  document.getElementById('btn-judge').disabled=true;
   try{
-    const F=window.__FB;
-
-    // 每次重新初始化確保乾淨
-    if(!fbApp){
-      fbApp=F.initializeApp(FB_CFG,'bey-'+Date.now());
+    const F=await initFB();
+    const provider=new F.GoogleAuthProvider();
+    const result=await F.signInWithPopup(fbAuth,provider);
+    const email=result.user.email;
+    if(!JUDGE_EMAILS.includes(email)){
+      await F.signOut(fbAuth);
+      loadEl.textContent='';
+      errEl.textContent='此帳號沒有裁判權限（'+email+'）';
+      document.getElementById('btn-judge').disabled=false;
+      return;
     }
-    fbAuth=F.getAuth(fbApp);
-    fbDb=F.getFirestore(fbApp);
-
-    // 儲存密碼供背景驗證用
-    window._judgePw = isJudge ? pw : '';
-    judgeVerified = false;
-
-    // 所有人匿名登入，等待 auth 穩定
-    await new Promise((res,rej)=>{
-      const unsub=fbAuth.onAuthStateChanged(user=>{
-        if(user){unsub();res();}
-      });
-      F.signInAnonymously(fbAuth).catch(e=>{unsub();rej(e);});
-      setTimeout(()=>{unsub();rej(new Error('登入逾時'));},10000);
-    });
-
-    // 裁判密碼驗證：先進房間，Firestore 連線穩定後背景驗證
-    if(isJudge){
-      // 先暫時進入（等背景驗證完才正式確認身分）
-      // 背景驗證會在 startListener() 之後執行
-      window._pendingJudgeVerify = { room, pw, F };
-    }
-
-    // 登入成功
+    isJudge=true;
+    judgeVerified=true;
     roomId=ROOM_ID;
-    document.getElementById('gate').style.display='none';
+    loadEl.textContent='';
+    enterApp();
+  }catch(e){
+    loadEl.textContent='';
+    errEl.textContent='登入失敗：'+(e.message||e.code);
+    document.getElementById('btn-judge').disabled=false;
+  }
+}
 
-    // 更新狀態列
-    document.getElementById('sdot').className='sdot '+(isJudge?'judge':'viewer');
-    document.getElementById('stxt').textContent='BEYBLADE X 大賽';
-    document.getElementById('srole').textContent=isJudge?'⚔️ 裁判組':'👁️ 觀眾';
-    document.getElementById('srole').style.color=isJudge?'var(--orange)':'var(--green)';
+// 觀眾進入（匿名）
+async function enterViewer(){
+  const errEl=document.getElementById('gerr');
+  const loadEl=document.getElementById('gload');
+  errEl.textContent='';
+  loadEl.textContent='連線中...';
+  document.getElementById('btn-viewer').disabled=true;
+  try{
+    const F=await initFB();
+    await new Promise((res,rej)=>{
+      const u=F.onAuthStateChanged(fbAuth,user=>{if(user){u();res();}});
+      F.signInAnonymously(fbAuth).catch(e=>{u();rej(e);});
+      setTimeout(()=>rej(new Error('連線逾時')),10000);
+    });
+    isJudge=false;
+    judgeVerified=true;
+    roomId=ROOM_ID;
+    loadEl.textContent='';
+    enterApp();
+  }catch(e){
+    loadEl.textContent='';
+    errEl.textContent='連線失敗：'+(e.message||e.code);
+    document.getElementById('btn-viewer').disabled=false;
+  }
+}
 
-    // 觀眾：鎖定
-    if(!isJudge) lockViewer();
 
-    // 開始監聽
-    startListener();
-
-
-
-    // 裁判：嘗試恢復
-    if(isJudge){
-      const snap=await F.getDoc(F.doc(fbDb,'rooms',roomId));
+// 進入主畫面（Google 或匿名登入成功後呼叫）
+function enterApp(){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('sdot').className='sdot '+(isJudge?'judge':'viewer');
+  document.getElementById('stxt').textContent='BEYBLADE X 大賽';
+  document.getElementById('srole').textContent=isJudge?'⚔️ 裁判組':'👁️ 觀眾';
+  document.getElementById('srole').style.color=isJudge?'var(--orange)':'var(--green)';
+  if(!isJudge) lockViewer();
+  startListener();
+  if(isJudge){
+    const F=window.__FB;
+    F.getDoc(F.doc(fbDb,'rooms',roomId)).then(snap=>{
       if(snap.exists()&&snap.data().gs){
         const gs=snap.data().gs;
         if(gs.phase&&gs.phase!=='setup'){
@@ -465,9 +479,10 @@ async function enterRoom(){
           }
         }
       }
-    }
-
+    }).catch(e=>console.warn('恢復失敗',e));
+  }
 }
+
 
 let judgeVerified = false; // 裁判密碼是否已驗證
 
