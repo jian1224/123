@@ -481,11 +481,13 @@ function startListener(){
       judgeVerified = true;
       const pwHash = await simpleHash(window._judgePw||'');
       if(!d._pw){
-        // 新房間：把密碼 hash 寫進去（合併到下次 push 或立即寫）
-        window._judgeHash = pwHash;
+        // 新房間：立刻寫入密碼 hash
+        try{
+          await F.setDoc(F.doc(fbDb,'rooms',roomId),{_pw:pwHash},{merge:true});
+        }catch(e){ console.warn('寫入密碼失敗',e); }
       }else if(d._pw !== pwHash){
         // 密碼錯誤
-        alert('⚠️ 密碼錯誤！此房間的裁判密碼已設定。\n你將被切換為觀眾模式。');
+        alert('密碼錯誤！此房間的裁判密碼已設定，你將被切換為觀眾模式。');
         isJudge = false;
         document.getElementById('srole').textContent = '👁️ 觀眾';
         document.getElementById('srole').style.color = 'var(--green)';
@@ -493,6 +495,10 @@ function startListener(){
         lockViewer();
         return;
       }
+      // 密碼正確，確認裁判 UI
+      document.getElementById('srole').textContent = '⚔️ 裁判組';
+      document.getElementById('srole').style.color = 'var(--orange)';
+      document.getElementById('sdot').className = 'sdot judge';
     }
 
     if(!snap.exists())return;
