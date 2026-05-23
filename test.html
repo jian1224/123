@@ -10,12 +10,17 @@
 <!-- Firebase SDK (modular v10) -->
 <script type="module">
 import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInAnonymously }             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc,
-         getDoc, onSnapshot }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInAnonymously,
+         signInWithPopup, GoogleAuthProvider,
+         signOut, onAuthStateChanged }                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, deleteDoc,
+         getDoc, onSnapshot, collection,
+         getDocs, writeBatch }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 window.__FB = { initializeApp, getAuth, signInAnonymously,
-                getFirestore, doc, setDoc, getDoc, onSnapshot };
+                signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged,
+                getFirestore, doc, setDoc, deleteDoc, getDoc, onSnapshot,
+                collection, getDocs, writeBatch };
 window.__FB_READY = true;
 window.dispatchEvent(new Event('fb-ready'));
 </script>
@@ -177,26 +182,43 @@ th{background:var(--card);color:var(--green);}
 ════════════════════════════════════════ -->
 <div id="gate">
   <div style="text-align:center">
-    <h1>⚡ BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v30.0</div>
+    <div style="font-size:56px;margin-bottom:8px">⚡</div>
+    <h1>BEYBLADE X</h1>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v31.0</div>
   </div>
 
-  <div class="gcard">
-    <h3>🏟️ 選擇身分與房間</h3>
-    <div class="gtabs">
-      <button class="gtab on" id="tab-j" onclick="pickRole('judge')">⚔️ 裁判組</button>
-      <button class="gtab"    id="tab-v" onclick="pickRole('viewer')">👁️ 選手 / 觀眾</button>
+  <div class="gcard" style="gap:20px">
+    <!-- 裁判按鈕 -->
+    <button id="btn-judge" onclick="loginJudge()" style="
+      display:flex;align-items:center;justify-content:center;gap:14px;
+      width:100%;padding:18px;border-radius:12px;border:2px solid var(--orange);
+      background:rgba(249,115,22,0.1);color:var(--orange);font-size:18px;font-weight:900;
+      cursor:pointer;transition:.2s;letter-spacing:1px;
+    ">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+      ⚔️ 裁判登入（Google）
+    </button>
+
+    <div style="display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span>或</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
     </div>
-    <input type="text" id="g-room" placeholder="房間 ID（例如：cup2025）" style="width:100%">
-    <div id="pw-row">
-      <input type="password" id="g-pw" placeholder="裁判密碼" style="width:100%">
-      <p style="color:var(--orange);font-size:12px;margin:0">
-        ⚠️ 第一次進入此房間會以這組密碼作為裁判密碼。
-      </p>
-    </div>
+
+    <!-- 觀眾按鈕 -->
+    <button id="btn-viewer" onclick="enterViewer()" style="
+      display:flex;align-items:center;justify-content:center;gap:14px;
+      width:100%;padding:18px;border-radius:12px;border:2px solid var(--green);
+      background:rgba(190,242,100,0.1);color:var(--green);font-size:18px;font-weight:900;
+      cursor:pointer;transition:.2s;letter-spacing:1px;
+    ">
+      👁️ 選手 / 觀眾（免登入）
+    </button>
+
     <div id="gerr" style="color:#ef4444;font-size:13px;min-height:18px;text-align:center"></div>
     <div id="gload" style="color:var(--muted);font-size:13px;text-align:center"></div>
-    <button class="bp bfull" onclick="enterRoom()">進入賽場 ➔</button>
   </div>
 </div>
 
@@ -319,8 +341,9 @@ th{background:var(--card);color:var(--green);}
       <th style="width:70px">名次</th><th>選手</th>
       <th>勝場</th><th>負場</th><th>總得分</th><th>總失分</th><th>失分率</th>
     </tr></thead><tbody id="lbbody"></tbody></table>
-    <div style="margin-top:25px" data-html2canvas-ignore>
-      <button class="bp bfull" style="padding:15px" onclick="downloadPoster()">📷 下載對戰海報</button>
+    <div style="margin-top:25px;display:flex;gap:12px;flex-wrap:wrap" data-html2canvas-ignore>
+      <button class="bp bfull" style="padding:15px;flex:2" onclick="downloadPoster()">📷 下載對戰海報</button>
+      <button class="bd" style="padding:15px;flex:1;min-width:140px" onclick="clearRoomData()">🗑️ 清空賽事資料</button>
     </div>
   </div>
 
@@ -362,24 +385,9 @@ let history=[];              // 上一步 stack
 // ══════════════════════════════════════════════
 // GATE 邏輯
 // ══════════════════════════════════════════════
-function pickRole(r){
-  isJudge=(r==='judge');
-  document.getElementById('tab-j').classList.toggle('on',isJudge);
-  document.getElementById('tab-v').classList.toggle('on',!isJudge);
-  document.getElementById('pw-row').style.display=isJudge?'flex':'none';
-  document.getElementById('pw-row').style.flexDirection='column';
-  document.getElementById('pw-row').style.gap='8px';
-}
-// 預設顯示密碼列
-document.getElementById('pw-row').style.display='flex';
-document.getElementById('pw-row').style.flexDirection='column';
-document.getElementById('pw-row').style.gap='8px';
-
-// 簡單密碼 hash（SHA-256 via Web Crypto API）
-async function simpleHash(str){
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
+// 裁判允許的 email 清單（可自行新增）
+const JUDGE_EMAILS = ['yuan01224@gmail.com'];
+const ROOM_ID = 'beyblade-main'; // 固定唯一房間
 
 async function enterRoom(){
   const errEl=document.getElementById('gerr');
@@ -429,13 +437,12 @@ async function enterRoom(){
     }
 
     // 登入成功
-    roomId=room;
-    loadEl.textContent='';
+    roomId=ROOM_ID;
     document.getElementById('gate').style.display='none';
 
     // 更新狀態列
     document.getElementById('sdot').className='sdot '+(isJudge?'judge':'viewer');
-    document.getElementById('stxt').textContent='房間：'+roomId;
+    document.getElementById('stxt').textContent='BEYBLADE X 大賽';
     document.getElementById('srole').textContent=isJudge?'⚔️ 裁判組':'👁️ 觀眾';
     document.getElementById('srole').style.color=isJudge?'var(--orange)':'var(--green)';
 
@@ -460,11 +467,6 @@ async function enterRoom(){
       }
     }
 
-  }catch(e){
-    console.error(e);
-    loadEl.textContent='';
-    errEl.textContent='連線失敗：'+(e.message||e.code||'未知錯誤');
-  }
 }
 
 let judgeVerified = false; // 裁判密碼是否已驗證
@@ -475,31 +477,6 @@ function startListener(){
   const ref=F.doc(fbDb,'rooms',roomId);
   unsub=F.onSnapshot(ref, async snap=>{
     const d = snap.exists() ? snap.data() : {};
-
-    // 裁判密碼驗證（只做一次，利用已有的 onSnapshot 連線）
-    if(isJudge && !judgeVerified){
-      judgeVerified = true;
-      const pwHash = await simpleHash(window._judgePw||'');
-      if(!d._pw){
-        // 新房間：立刻寫入密碼 hash
-        try{
-          await F.setDoc(F.doc(fbDb,'rooms',roomId),{_pw:pwHash},{merge:true});
-        }catch(e){ console.warn('寫入密碼失敗',e); }
-      }else if(d._pw !== pwHash){
-        // 密碼錯誤
-        alert('密碼錯誤！此房間的裁判密碼已設定，你將被切換為觀眾模式。');
-        isJudge = false;
-        document.getElementById('srole').textContent = '👁️ 觀眾';
-        document.getElementById('srole').style.color = 'var(--green)';
-        document.getElementById('sdot').className = 'sdot viewer';
-        lockViewer();
-        return;
-      }
-      // 密碼正確，確認裁判 UI
-      document.getElementById('srole').textContent = '⚔️ 裁判組';
-      document.getElementById('srole').style.color = 'var(--orange)';
-      document.getElementById('sdot').className = 'sdot judge';
-    }
 
     if(!snap.exists())return;
     // 裁判自己剛推送的那次跳過（避免回聲），觀眾永遠接收
@@ -529,11 +506,17 @@ async function push(){
   }
 }
 
-function leaveRoom(){
+async function leaveRoom(){
   if(unsub){unsub();unsub=null;}
   if(viewerObserver){viewerObserver.disconnect();viewerObserver=null;}
-  if(fbAuth){try{fbAuth.signOut();}catch(e){}}
+  if(fbAuth){
+    try{
+      const F=window.__FB;
+      await F.signOut(fbAuth);
+    }catch(e){}
+  }
   fbApp=null;fbAuth=null;fbDb=null;roomId='';
+  isJudge=false;judgeVerified=false;
 
   // 解鎖所有元素
   document.querySelectorAll('[data-vlocked]').forEach(el=>{
@@ -548,6 +531,12 @@ function leaveRoom(){
 
   // 回到設定畫面
   backToMenu();
+
+  // 重置按鈕
+  document.getElementById('btn-judge').disabled=false;
+  document.getElementById('btn-viewer').disabled=false;
+  document.getElementById('gerr').textContent='';
+  document.getElementById('gload').textContent='';
 
   // 顯示 gate
   document.getElementById('gate').style.display='flex';
@@ -1075,6 +1064,20 @@ function updateLB(){
     const lr=t?(p.lost/t).toFixed(2):'0.00';
     tb.innerHTML+=`<tr ${i===0&&p.played?'class="toprow"':''}><td>${i+1}</td><td style="font-weight:bold">${p.name}</td><td style="color:var(--green);font-weight:bold">${p.wins}</td><td style="color:#ef4444">${p.losses}</td><td>${p.scored}</td><td>${p.lost}</td><td style="font-weight:bold;color:var(--orange)">${lr}</td></tr>`;
   });
+}
+
+// ── 清空賽事資料 ──
+async function clearRoomData(){
+  if(!isJudge)return;
+  if(!confirm('確定要清空此場賽事所有資料嗎？此操作無法復原。'))return;
+  try{
+    const F=window.__FB;
+    await F.deleteDoc(F.doc(fbDb,'rooms',ROOM_ID));
+    alert('賽事資料已清空！可以開始新的一場賽事。');
+    leaveRoom();
+  }catch(e){
+    alert('清空失敗：'+e.message);
+  }
 }
 
 // ── 下載海報 ──
