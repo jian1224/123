@@ -502,15 +502,20 @@ function startListener(){
 }
 
 async function push(){
-  if(!fbDb||!roomId||!isJudge)return;
+  console.log('[push] fbDb='+!!fbDb+' roomId='+roomId+' isJudge='+isJudge);
+  if(!fbDb||!roomId||!isJudge){
+    console.warn('[push] blocked - fbDb:'+!!fbDb+' roomId:'+roomId+' isJudge:'+isJudge);
+    return;
+  }
   const F=window.__FB;
   const ts=Date.now();
   lastPushTime=ts;
   skipNext=true;
   try{
     const payload = {gs:dumpState(),ts};
-    if(window._judgeHash){ payload._pw = window._judgeHash; window._judgeHash = null; }
+    console.log('[push] writing to rooms/'+roomId);
     await F.setDoc(F.doc(fbDb,'rooms',roomId),payload,{merge:true});
+    console.log('[push] success!');
     const el=document.getElementById('sync');
     el.classList.add('on');
     clearTimeout(el._t);
