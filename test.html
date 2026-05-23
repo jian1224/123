@@ -184,7 +184,7 @@ th{background:var(--card);color:var(--green);}
   <div style="text-align:center">
     <div style="font-size:56px;margin-bottom:8px">⚡</div>
     <h1>BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v33.0</div>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v34.0</div>
   </div>
 
   <div class="gcard" style="gap:20px">
@@ -504,21 +504,31 @@ function startListener(){
 }
 
 async function push(){
+  console.log('[push] called, roomId='+roomId+' isJudge='+isJudge+' fbApp='+!!fbApp);
   if(!roomId||!isJudge)return;
+  if(!window.__FB||!fbApp){
+    console.error('[push] FB not ready');
+    return;
+  }
   const F=window.__FB;
-  // 每次重新取得最新的 Firestore 實例，避免初始化時機問題
-  const db=F.getFirestore(fbApp);
+  let db;
+  try{ db=F.getFirestore(fbApp); }
+  catch(e){ console.error('[push] getFirestore failed:',e); return; }
   const ts=Date.now();
   skipNext=true;
   try{
-    const payload={gs:dumpState(),ts};
+    const state=dumpState();
+    console.log('[push] state phase='+state.phase+' matches='+state.matches.length);
+    const payload={gs:state,ts};
+    console.log('[push] calling setDoc...');
     await F.setDoc(F.doc(db,'rooms',roomId),payload,{merge:true});
+    console.log('[push] SUCCESS!');
     const el=document.getElementById('sync');
     el.classList.add('on');
     clearTimeout(el._t);
     el._t=setTimeout(()=>el.classList.remove('on'),2000);
   }catch(e){
-    console.error('[push] FAILED:',e.code,e.message);
+    console.error('[push] setDoc FAILED:',e.name,e.code,e.message,e);
     skipNext=false;
   }
 }
