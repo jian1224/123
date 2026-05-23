@@ -521,8 +521,8 @@ async function push(){
     clearTimeout(el._t);
     el._t=setTimeout(()=>el.classList.remove('on'),2000);
   }catch(e){
-    console.error('push fail',e);
-    skipNext=false; // 失敗時重置，下次收到監聽才能正常更新
+    console.error('[push] FAILED:', e.code, e.message, e);
+    skipNext=false;
   }
 }
 
