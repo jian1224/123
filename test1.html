@@ -178,7 +178,7 @@ th{background:var(--card);color:var(--green);}
 <div id="gate">
   <div style="text-align:center">
     <h1>⚡ BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v30.0</div>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v24.0</div>
   </div>
 
   <div class="gcard">
@@ -485,8 +485,7 @@ function startListener(){
         window._judgeHash = pwHash;
       }else if(d._pw !== pwHash){
         // 密碼錯誤
-        alert('⚠️ 密碼錯誤！此房間的裁判密碼已設定。
-你將被切換為觀眾模式。');
+        alert('⚠️ 密碼錯誤！此房間的裁判密碼已設定。\n你將被切換為觀眾模式。');
         isJudge = false;
         document.getElementById('srole').textContent = '👁️ 觀眾';
         document.getElementById('srole').style.color = 'var(--green)';
