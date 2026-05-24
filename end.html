@@ -915,7 +915,14 @@ function finishGame(){
 function submitScore(){
   if(!isJudge)return;
   if(mode==='rr'){submitRR();return;}
-  if(!activeMatch){return alert('請先點選要計分的場次！');}
+  // 如果 activeMatch 是 null，嘗試從季軍賽找
+  if(!activeMatch){
+    if(thirdNode&&!thirdNode.isPlayed&&thirdNode.p1&&thirdNode.p2){
+      activeMatch=thirdNode;
+    }else{
+      return alert('請先點選要計分的場次！');
+    }
+  }
   const s1=parseInt(document.getElementById('fs1').value);
   const s2=parseInt(document.getElementById('fs2').value);
   if(isNaN(s1)||isNaN(s2)||s1===s2)return alert('請輸入有效且不能平手的比分！');
