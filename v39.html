@@ -475,7 +475,7 @@ function enterApp(){
   startListener();
   if(isJudge){
     const F=window.__FB;
-    F.get(F.ref(fbDb,'rooms/'+roomId)).then(snap=>{
+    F.get(F.ref(F.getDatabase(fbApp),'rooms/'+roomId)).then(snap=>{
       const d=snap.val();
       if(d&&d.gs){
         const gs=d.gs;
@@ -495,7 +495,8 @@ let judgeVerified = false; // 裁判密碼是否已驗證
 function startListener(){
   const F=window.__FB;
   if(unsub){unsub();unsub=null;}
-  const dbRef=F.ref(fbDb,'rooms/'+roomId);
+  const db=F.getDatabase(fbApp);
+  const dbRef=F.ref(db,'rooms/'+roomId);
   unsub=F.onValue(dbRef, snap=>{
     if(isJudge&&skipNext){skipNext=false;return;}
     skipNext=false;
@@ -508,13 +509,14 @@ let isPushing = false;
 let pushQueue = false;
 
 async function push(){
-  if(!roomId||!isJudge) return;
+  if(!roomId||!isJudge||!fbApp) return;
   if(isPushing){ pushQueue=true; return; }
   isPushing=true;
   const F=window.__FB;
+  const db=F.getDatabase(fbApp);
   try{
     const state=dumpState();
-    await F.set(F.ref(fbDb,'rooms/'+roomId),{gs:state,ts:Date.now()});
+    await F.set(F.ref(db,'rooms/'+roomId),{gs:state,ts:Date.now()});
     const el=document.getElementById('sync');
     el.classList.add('on');
     clearTimeout(el._t);
@@ -1098,7 +1100,7 @@ async function clearRoomData(){
   if(!confirm('確定要清空此場賽事所有資料嗎？此操作無法復原。'))return;
   try{
     const F=window.__FB;
-    await F.remove(F.ref(fbDb,'rooms/'+ROOM_ID));
+    await F.remove(F.ref(F.getDatabase(fbApp),'rooms/'+ROOM_ID));
     alert('賽事資料已清空！可以開始新的一場賽事。');
     leaveRoom();
   }catch(e){
