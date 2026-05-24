@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Firebase Test</title></head>
+<body>
+<h2>Firebase 寫入測試</h2>
+<button onclick="doTest()" style="padding:20px;font-size:18px;background:lime;border:none;cursor:pointer">點我測試寫入</button>
+<pre id="log" style="background:#000;color:#0f0;padding:20px;margin-top:20px;font-size:14px;min-height:200px"></pre>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { initializeFirestore, doc, setDoc, experimentalForceLongPolling } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const log = t => { document.getElementById('log').textContent += t + '\n'; console.log(t); };
+
+const cfg = {
+  apiKey:"AIzaSyCGM6nO_LqSQI3D3MRS9fbWGHrpCR42QzU",
+  authDomain:"beyblade-x-4ff10.firebaseapp.com",
+  projectId:"beyblade-x-4ff10",
+  storageBucket:"beyblade-x-4ff10.firebasestorage.app",
+  messagingSenderId:"982144047140",
+  appId:"1:982144047140:web:82283a7444800f12f1a0b1"
+};
+
+let app, auth, db;
+
+window.doTest = async () => {
+  try {
+    log('1. 初始化 Firebase...');
+    app = initializeApp(cfg, 'test-' + Date.now());
+    auth = getAuth(app);
+    db = initializeFirestore(app, { experimentalForceLongPolling: true });
+    log('2. 初始化完成');
+
+    log('3. 匿名登入...');
+    const result = await signInAnonymously(auth);
+    log('4. 登入成功 uid=' + result.user.uid);
+
+    log('5. 寫入 Firestore...');
+    await setDoc(doc(db, 'test', 'ping'), {
+      msg: 'hello',
+      time: Date.now()
+    });
+    log('✅ 寫入成功！請去 Firebase Console 的 Firestore 查看 test/ping 文件');
+  } catch(e) {
+    log('❌ 錯誤：' + e.name + ' | ' + e.code + ' | ' + e.message);
+  }
+};
+</script>
+</body>
+</html>
