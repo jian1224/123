@@ -643,54 +643,61 @@ function rp(sp){
 }
 
 function loadState(s){
-  if(!s||s.phase==='setup')return;
-  // 強防護：任何欄位缺失都跳過
-  if(!s.players||!Array.isArray(s.players))return;
-  if(!s.matches||!Array.isArray(s.matches))return;
-  players=s.players.map(p=>({...p}));
-  mode=s.mode;
+  if(!s||typeof s!=='object')return;
+  if(s.phase==='setup')return;
+  if(!Array.isArray(s.players)||!Array.isArray(s.matches))return;
+
+  players=s.players.map(p=>({
+    name:p.name||'未知',wins:p.wins||0,losses:p.losses||0,
+    scored:p.scored||0,lost:p.lost||0,played:p.played||0
+  }));
+  mode=s.mode||'single';
 
   if(mode==='rr'){
     rrIdx=s.rridx||0;
     rrList=(s.rrlist||[]).map(r=>({
-      p1:players.find(p=>p.name===r.p1)||{name:r.p1},
-      p2:players.find(p=>p.name===r.p2)||{name:r.p2},
-      s1:r.s1,s2:r.s2
+      p1:players.find(p=>p.name===r.p1)||{name:r.p1||''},
+      p2:players.find(p=>p.name===r.p2)||{name:r.p2||''},
+      s1:r.s1??null,s2:r.s2??null
     }));
     showArena();
     document.getElementById('rrcanvas').classList.remove('hidden');
     updateLB();
-    if(rrIdx<rrList.length) loadRR();
+    if(rrIdx<rrList.length)loadRR();
     else finishGame();
     return;
   }
 
-  // 重建 match 節點
   matches=[];thirdNode=null;root=null;
-  (s.matches||[]).forEach(sm=>{
-    if(!sm||!sm.id)return; // 跳過無效資料
-    matches.push({id:sm.id,s1:sm.s1??null,s2:sm.s2??null,isPlayed:sm.played||false,isThird:sm.third||false,
-      seed1:sm.sd1??null,seed2:sm.sd2??null,p1:null,p2:null,winner:null,loser:null,nextNode:null,prevNodes:[]});
+  s.matches.forEach(sm=>{
+    if(!sm||!sm.id)return;
+    matches.push({
+      id:sm.id,s1:sm.s1??null,s2:sm.s2??null,
+      isPlayed:sm.played||false,isThird:sm.third||false,
+      seed1:sm.sd1??null,seed2:sm.sd2??null,
+      p1:null,p2:null,winner:null,loser:null,nextNode:null,prevNodes:[]
+    });
   });
-  (s.matches||[]).forEach((sm,i)=>{
+  s.matches.forEach((sm,i)=>{
     if(!sm||!sm.id)return;
     const m=matches[i];
-    m.p1=rp(sm.p1);m.p2=rp(sm.p2);m.winner=rp(sm.win);m.loser=rp(sm.lose);
+    if(!m)return;
+    m.p1=rp(sm.p1);m.p2=rp(sm.p2);
+    m.winner=rp(sm.win);m.loser=rp(sm.lose);
     if(sm.nid)m.nextNode=matches.find(x=>x.id===sm.nid)||null;
-    m.prevNodes=sm.pids.map(id=>matches.find(x=>x.id===id)).filter(Boolean);
+    m.prevNodes=(sm.pids||[]).map(id=>matches.find(x=>x.id===id)).filter(Boolean);
   });
   if(s.third){
     const tm=s.third;
-    thirdNode={id:tm.id,s1:tm.s1,s2:tm.s2,isPlayed:tm.played,isThird:true,
+    thirdNode={id:tm.id,s1:tm.s1??null,s2:tm.s2??null,isPlayed:tm.played||false,isThird:true,
       p1:rp(tm.p1),p2:rp(tm.p2),winner:rp(tm.win),loser:rp(tm.lose),nextNode:null,prevNodes:[]};
   }
-  if(mode==='single') root=matches.find(m=>!m.nextNode&&!m.isThird)||null;
-
+  if(mode==='single')root=matches.find(m=>!m.nextNode&&!m.isThird)||null;
   activeMatch=s.amid?(matches.find(m=>m.id===s.amid)||thirdNode):null;
 
   showArena();
-  redraw();
-  updateLB();
+  try{redraw();}catch(e){console.warn('redraw error',e);}
+  try{updateLB();}catch(e){console.warn('updateLB error',e);}
 
   const allDone=!activeMatch||
     (matches.every(m=>m.isPlayed)&&(!thirdNode||thirdNode.isPlayed));
@@ -704,13 +711,12 @@ function loadState(s){
     document.getElementById('fp1').textContent=activeMatch.p1?activeMatch.p1.name:'-';
     document.getElementById('fp2').textContent=activeMatch.p2?activeMatch.p2.name:'-';
     if(isJudge){
-      // 裁判：顯示計分輸入
       document.getElementById('scorezone').classList.remove('hidden');
       document.getElementById('finzone').classList.add('hidden');
       document.getElementById('lbsec').classList.add('hidden');
-      document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
+      document.getElementById('fs1').value=0;
+      document.getElementById('fs2').value=0;
     }else{
-      // 觀眾：只顯示比賽資訊，隱藏輸入框和按鈕
       document.getElementById('fs1').closest('.fzone').querySelectorAll('input,button').forEach(el=>el.style.display='none');
     }
     setTimeout(()=>{
@@ -720,9 +726,7 @@ function loadState(s){
   }
 }
 
-// ══════════════════════════════════════════════
-// 選手管理
-// ══════════════════════════════════════════════
+
 function addPlayer(){
   if(!isJudge)return;
   const v=document.getElementById('manIn').value.trim();
