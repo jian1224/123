@@ -2,7 +2,7 @@
 <html>
 <head><meta charset="UTF-8"><title>Firebase Test</title></head>
 <body>
-<h2>Firebase 寫入測試</h2>
+<h2>Firebase 寫入測試 v2</h2>
 <button onclick="doTest()" style="padding:20px;font-size:18px;background:lime;border:none;cursor:pointer">點我測試寫入</button>
 <pre id="log" style="background:#000;color:#0f0;padding:20px;margin-top:20px;font-size:14px;min-height:200px"></pre>
 
@@ -11,7 +11,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { initializeFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const log = t => { document.getElementById('log').textContent += t + '\n'; console.log(t); };
+const log = t => { document.getElementById('log').textContent += t + '\n'; };
 
 const cfg = {
   apiKey:"AIzaSyCGM6nO_LqSQI3D3MRS9fbWGHrpCR42QzU",
@@ -22,25 +22,26 @@ const cfg = {
   appId:"1:982144047140:web:82283a7444800f12f1a0b1"
 };
 
+// 只初始化一次，存在模組層級
+log('載入中，初始化 Firebase...');
+const app = initializeApp(cfg);
+const auth = getAuth(app);
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+log('Firebase 初始化完成');
+
 window.doTest = async () => {
   try {
-    log('1. 初始化 Firebase...');
-    const app = initializeApp(cfg, 'fbtest-' + Date.now());
-    const auth = getAuth(app);
-    // 正確用法：只傳設定物件，不 import experimentalForceLongPolling
-    const db = initializeFirestore(app, { experimentalForceLongPolling: true });
-    log('2. 初始化完成');
-
-    log('3. 匿名登入...');
+    log('--- 開始測試 ---');
+    log('匿名登入...');
     const result = await signInAnonymously(auth);
-    log('4. 登入成功 uid=' + result.user.uid);
+    log('登入成功 uid=' + result.user.uid);
 
-    log('5. 寫入 Firestore...');
+    log('寫入測試資料...');
     await setDoc(doc(db, 'test', 'ping'), {
-      msg: 'hello',
+      msg: 'hello ' + new Date().toISOString(),
       time: Date.now()
     });
-    log('✅ 寫入成功！請去 Firebase Console 的 Firestore 查看 test/ping');
+    log('✅ 寫入成功！');
   } catch(e) {
     log('❌ 錯誤：' + e.name + ' | ' + e.code + ' | ' + e.message);
   }
