@@ -184,7 +184,7 @@ th{background:var(--card);color:var(--green);}
   <div style="text-align:center">
     <div style="font-size:56px;margin-bottom:8px">⚡</div>
     <h1>BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v35.0</div>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v31.0</div>
   </div>
 
   <div class="gcard" style="gap:20px">
@@ -509,34 +509,30 @@ function startListener(){
   });
 }
 
+let isPushing = false;
+let pushQueue = false;
+
 async function push(){
-  console.log('[push] called, roomId='+roomId+' isJudge='+isJudge+' fbApp='+!!fbApp);
-  if(!roomId||!isJudge)return;
-  if(!window.__FB||!fbApp){
-    console.error('[push] FB not ready');
-    return;
-  }
+  if(!roomId||!isJudge) return;
+  if(isPushing){ pushQueue=true; return; }
+  isPushing=true;
   const F=window.__FB;
-  const db=fbDb;
-  if(!db){ console.error('[push] fbDb is null'); return; }
-  const ts=Date.now();
-  skipNext=true;
   try{
     const state=dumpState();
-    console.log('[push] state phase='+state.phase+' matches='+state.matches.length);
-    const payload={gs:state,ts};
-    console.log('[push] calling setDoc...');
-    await F.setDoc(F.doc(db,'rooms',roomId),payload,{merge:true});
-    console.log('[push] SUCCESS!');
+    await F.setDoc(F.doc(fbDb,'rooms',roomId),{gs:state,ts:Date.now()},{merge:true});
+    console.log('[push] SUCCESS');
     const el=document.getElementById('sync');
     el.classList.add('on');
     clearTimeout(el._t);
     el._t=setTimeout(()=>el.classList.remove('on'),2000);
   }catch(e){
-    console.error('[push] setDoc FAILED:',e.name,e.code,e.message,e);
-    skipNext=false;
+    console.error('[push] FAILED:',e.name,e.code,e.message);
+  }finally{
+    isPushing=false;
+    if(pushQueue){ pushQueue=false; push(); }
   }
 }
+
 
 async function leaveRoom(){
   if(unsub){unsub();unsub=null;}
@@ -594,51 +590,55 @@ function lockViewer(){
 // 狀態序列化 / 還原
 // ══════════════════════════════════════════════
 function dumpState(){
-  // 遞迴把所有 undefined 轉成 null，Firestore 不接受 undefined
-  function clean(obj){
-    if(obj===undefined)return null;
-    if(obj===null||typeof obj!=='object')return obj;
-    if(Array.isArray(obj))return obj.map(clean);
-    const out={};
-    for(const k in obj)out[k]=clean(obj[k]);
-    return out;
-  }
-  function dp(p){return p?{n:p.name??null,b:p.isBye||false}:null;}
-  function dm(m){
-    if(!m)return null;
-    return{
-      id:m.id??null,
-      s1:m.s1??null,
-      s2:m.s2??null,
-      played:m.isPlayed||false,
-      third:m.isThird||false,
-      sd1:m.seed1??null,
-      sd2:m.seed2??null,
-      p1:dp(m.p1),p2:dp(m.p2),
-      win:dp(m.winner),lose:dp(m.loser),
-      nid:m.nextNode?m.nextNode.id:null,
-      pids:m.prevNodes?m.prevNodes.map(x=>x.id):[]
-    };
-  }
-  const raw={
-    phase:mode?'playing':'setup',
-    mode:mode||null,
-    players:players.map(p=>({
-      name:p.name??null,wins:p.wins??0,losses:p.losses??0,
-      scored:p.scored??0,lost:p.lost??0,played:p.played??0
+  const stateObj = {
+    phase: mode ? 'playing' : 'setup',
+    mode: mode || null,
+    players: players.map(p => ({
+      name: p.name || null,
+      wins: p.wins || 0,
+      losses: p.losses || 0,
+      scored: p.scored || 0,
+      lost: p.lost || 0,
+      played: p.played || 0
     })),
-    matches:matches.map(dm),
-    third:dm(thirdNode),
-    amid:activeMatch?activeMatch.id:null,
-    rridx:rrIdx??0,
-    rrlist:rrList.map(m=>({
-      p1:m.p1.name??null,p2:m.p2.name??null,
-      s1:m.s1??null,s2:m.s2??null
+    matches: matches.map(m => ({
+      id: m.id,
+      s1: m.s1 ?? null,
+      s2: m.s2 ?? null,
+      played: m.isPlayed || false,
+      third: m.isThird || false,
+      sd1: m.seed1 ?? null,
+      sd2: m.seed2 ?? null,
+      p1: m.p1 ? {n: m.p1.name, b: m.p1.isBye||false} : null,
+      p2: m.p2 ? {n: m.p2.name, b: m.p2.isBye||false} : null,
+      win: m.winner ? {n: m.winner.name, b: m.winner.isBye||false} : null,
+      lose: m.loser ? {n: m.loser.name, b: m.loser.isBye||false} : null,
+      nid: m.nextNode ? m.nextNode.id : null,
+      pids: m.prevNodes ? m.prevNodes.map(x=>x.id) : []
     })),
-    hist:[]  // 不儲存 history，節省空間也避免格式問題
+    third: thirdNode ? {
+      id: thirdNode.id,
+      s1: thirdNode.s1 ?? null,
+      s2: thirdNode.s2 ?? null,
+      played: thirdNode.isPlayed || false,
+      p1: thirdNode.p1 ? {n: thirdNode.p1.name, b: thirdNode.p1.isBye||false} : null,
+      p2: thirdNode.p2 ? {n: thirdNode.p2.name, b: thirdNode.p2.isBye||false} : null,
+      win: thirdNode.winner ? {n: thirdNode.winner.name, b: thirdNode.winner.isBye||false} : null,
+      lose: thirdNode.loser ? {n: thirdNode.loser.name, b: thirdNode.loser.isBye||false} : null
+    } : null,
+    amid: activeMatch ? activeMatch.id : null,
+    rridx: rrIdx || 0,
+    rrlist: rrList.map(m => ({
+      p1: m.p1.name || null,
+      p2: m.p2.name || null,
+      s1: m.s1 ?? null,
+      s2: m.s2 ?? null
+    }))
   };
-  return clean(raw);  // 最後再過一遍，確保沒有任何 undefined
+  // 黃金法則：徹底移除所有 undefined 並切斷循環連結
+  return JSON.parse(JSON.stringify(stateObj));
 }
+
 
 function rp(sp){
   if(!sp)return null;
