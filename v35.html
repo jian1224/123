@@ -13,13 +13,13 @@ import { initializeApp }                              from "https://www.gstatic.
 import { getAuth, signInAnonymously,
          signInWithPopup, GoogleAuthProvider,
          signOut, onAuthStateChanged }                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, deleteDoc,
+import { getFirestore, initializeFirestore, doc, setDoc, deleteDoc,
          getDoc, onSnapshot, collection,
          getDocs, writeBatch }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 window.__FB = { initializeApp, getAuth, signInAnonymously,
                 signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged,
-                getFirestore, doc, setDoc, deleteDoc, getDoc, onSnapshot,
+                getFirestore, initializeFirestore, doc, setDoc, deleteDoc, getDoc, onSnapshot,
                 collection, getDocs, writeBatch };
 window.__FB_READY = true;
 window.dispatchEvent(new Event('fb-ready'));
@@ -404,7 +404,7 @@ async function initFB(){
       fbApp=getApp('beyblade-app');
     }
     fbAuth=F.getAuth(fbApp);
-    fbDb=F.getFirestore(fbApp);
+    fbDb=F.initializeFirestore(fbApp,{experimentalForceLongPolling:true});
   }
   return F;
 }
