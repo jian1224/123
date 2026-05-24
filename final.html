@@ -866,9 +866,11 @@ function syncTree(){
   });
   if(thirdNode&&!thirdNode.isPlayed){
     const fin=mode==='double'?matches[6]:root;
-    if(fin&&fin.prevNodes.length===2){
-      if(fin.prevNodes[0].isPlayed)thirdNode.p1=fin.prevNodes[0].loser;
-      if(fin.prevNodes[1].isPlayed)thirdNode.p2=fin.prevNodes[1].loser;
+    if(fin&&fin.prevNodes&&fin.prevNodes.length===2){
+      const lm=fin.prevNodes[0];
+      const rm=fin.prevNodes[1];
+      if(lm&&lm.isPlayed&&lm.loser)thirdNode.p1=lm.loser;
+      if(rm&&rm.isPlayed&&rm.loser)thirdNode.p2=rm.loser;
     }
   }
 }
@@ -880,12 +882,17 @@ function nextMatch(){
   // 先找一般場次
   found=matches.find(m=>!m.isThird&&!m.isPlayed&&m.p1&&m.p2&&!m.p1.isBye&&!m.p2.isBye);
   // 沒有一般場次才找季軍賽
-  if(!found&&thirdNode&&!thirdNode.isPlayed&&thirdNode.p1&&thirdNode.p2&&!thirdNode.p1.isBye&&!thirdNode.p2.isBye)found=thirdNode;
+  if(!found&&thirdNode&&!thirdNode.isPlayed&&thirdNode.p1&&thirdNode.p2&&!thirdNode.p1.isBye&&!thirdNode.p2.isBye){
+    found=thirdNode;
+  }
   if(found){
     activeMatch=found;
+    document.getElementById('fpanel').classList.remove('hidden');
+    document.getElementById('scorezone').classList.remove('hidden');
+    document.getElementById('finzone').classList.add('hidden');
     document.getElementById('flabel').textContent=found.isThird?'【季軍爭奪賽】':'【當前對戰】';
-    document.getElementById('fp1').textContent=found.p1.name;
-    document.getElementById('fp2').textContent=found.p2.name;
+    document.getElementById('fp1').textContent=found.p1?found.p1.name:'-';
+    document.getElementById('fp2').textContent=found.p2?found.p2.name:'-';
     document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
     const b=document.getElementById('b-'+found.id);
     if(b)setTimeout(()=>{b.classList.add('active');b.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});},50);
