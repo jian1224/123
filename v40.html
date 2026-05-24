@@ -644,11 +644,14 @@ function rp(sp){
 
 function loadState(s){
   if(!s||s.phase==='setup')return;
+  // 強防護：任何欄位缺失都跳過
+  if(!s.players||!Array.isArray(s.players))return;
+  if(!s.matches||!Array.isArray(s.matches))return;
   players=s.players.map(p=>({...p}));
   mode=s.mode;
 
   if(mode==='rr'){
-    rrIdx=s.rridx;
+    rrIdx=s.rridx||0;
     rrList=(s.rrlist||[]).map(r=>({
       p1:players.find(p=>p.name===r.p1)||{name:r.p1},
       p2:players.find(p=>p.name===r.p2)||{name:r.p2},
@@ -665,10 +668,12 @@ function loadState(s){
   // 重建 match 節點
   matches=[];thirdNode=null;root=null;
   (s.matches||[]).forEach(sm=>{
-    matches.push({id:sm.id,s1:sm.s1,s2:sm.s2,isPlayed:sm.played,isThird:sm.third,
-      seed1:sm.sd1,seed2:sm.sd2,p1:null,p2:null,winner:null,loser:null,nextNode:null,prevNodes:[]});
+    if(!sm||!sm.id)return; // 跳過無效資料
+    matches.push({id:sm.id,s1:sm.s1??null,s2:sm.s2??null,isPlayed:sm.played||false,isThird:sm.third||false,
+      seed1:sm.sd1??null,seed2:sm.sd2??null,p1:null,p2:null,winner:null,loser:null,nextNode:null,prevNodes:[]});
   });
   (s.matches||[]).forEach((sm,i)=>{
+    if(!sm||!sm.id)return;
     const m=matches[i];
     m.p1=rp(sm.p1);m.p2=rp(sm.p2);m.winner=rp(sm.win);m.loser=rp(sm.lose);
     if(sm.nid)m.nextNode=matches.find(x=>x.id===sm.nid)||null;
