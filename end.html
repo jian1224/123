@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="google-site-verification" content="MmdgKjiGkh2kaJpG8hJqVp4lptqJK7gdpAF1c1JbhFc" />
-<title>BEYBLADE X 大賽管理系統</title>
+<title>賞金盃-陀螺比賽</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <!-- Firebase SDK (modular v10) -->
@@ -97,7 +97,7 @@ li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;displa
 .padtop{padding-top:90px;}
 
 /* ── Match box ── */
-.mb{background:var(--match);border:1px solid #94a3b8;border-radius:4px;box-shadow:0 2px 5px #0002;width:220px;position:relative;z-index:2;}
+.mb{background:rgba(255,255,255,0.92);border:1px solid #94a3b8;border-radius:4px;box-shadow:0 2px 5px #0004;width:220px;position:relative;z-index:2;}
 .mb.active{border:3px solid var(--orange);box-shadow:0 0 15px rgba(249,115,22,.6);transform:scale(1.05);z-index:10;transition:.2s;}
 .pr{display:flex;align-items:center;height:34px;font-size:14px;font-weight:bold;color:#1e293b;border-bottom:1px solid #e2e8f0;}
 .pr:last-child{border-bottom:none;}
@@ -109,7 +109,9 @@ li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;displa
 .seed.empty{background:#cbd5e1;}
 
 /* ── Double wing ── */
-.dcanvas{background:var(--canvas);padding:40px;border-radius:12px;display:flex;justify-content:space-between;align-items:stretch;min-width:1100px;position:relative;overflow-x:auto;}
+.dcanvas{background:#1a2744;padding:40px;border-radius:12px;display:flex;justify-content:space-between;align-items:stretch;min-width:1100px;position:relative;overflow-x:auto;
+  background-image:url('logo1_nobg.png');background-repeat:no-repeat;background-position:center center;
+  background-size:min(400px,40%) auto;}
 .wing{display:flex;width:350px;justify-content:space-between;position:relative;}
 .col-o,.col-i{display:flex;flex-direction:column;justify-content:space-around;position:relative;}
 .col-o{height:400px;}.col-i{height:200px;margin-top:100px;}
@@ -135,7 +137,9 @@ li{background:var(--card);margin:4px 0;padding:8px 15px;border-radius:6px;displa
 .pod-n{padding:5px 10px;font-weight:bold;font-size:13px;flex-grow:1;transform:skewX(15deg);text-align:center;}
 
 /* ── Single wing ── */
-.scanvas{background:var(--canvas);padding:40px;border-radius:12px;overflow-x:auto;display:flex;align-items:center;min-height:400px;}
+.scanvas{background:#1a2744;padding:40px;border-radius:12px;overflow-x:auto;display:flex;align-items:center;min-height:400px;
+  background-image:url('logo1_nobg.png');background-repeat:no-repeat;background-position:center center;
+  background-size:min(400px,60%) auto;}
 .tnode{display:flex;align-items:center;position:relative;}
 .tchildren{display:flex;flex-direction:column;justify-content:center;position:relative;padding-right:30px;}
 .tchildren::after{content:'';position:absolute;right:15px;top:25%;bottom:25%;border-right:var(--lw) solid var(--line);}
@@ -154,6 +158,9 @@ th{background:var(--card);color:var(--green);}
 
 @media(max-width:768px){
   body{padding:10px;} h1{font-size:28px;}
+  #gate img{max-height:160px!important;max-width:340px!important;}
+  #gate img{max-height:160px!important;max-width:340px!important;}
+  .scanvas,.dcanvas{background-size:min(280px,70%) auto!important;}
   .ctrl-bar{flex-direction:column;align-items:stretch;gap:15px;}
   .cg{width:100%;border-left:none!important;padding-left:0!important;justify-content:space-between;}
   .cg input{flex-grow:1;margin-right:10px;width:auto;}
@@ -179,9 +186,13 @@ th{background:var(--card);color:var(--green);}
 ════════════════════════════════════════ -->
 <div id="gate">
   <div style="text-align:center">
-    <div style="font-size:56px;margin-bottom:8px">⚡</div>
+    <div style="margin-bottom:12px;filter:drop-shadow(0 0 24px rgba(56,189,248,0.7)) drop-shadow(0 0 48px rgba(56,189,248,0.35));">
+      <img src="logo2_nobg.png" alt="覺金頑潮 ODDS"
+        style="max-height:260px;width:auto;max-width:560px;display:block;margin:0 auto;
+               filter:drop-shadow(0 0 30px rgba(56,189,248,0.95)) drop-shadow(0 0 70px rgba(56,189,248,0.6)) drop-shadow(0 0 110px rgba(100,180,255,0.35));">
+    </div>
     <h1>BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v53.0</div>
+    <div class="sub" style="margin-top:5px">賞金賽事系統 v54.0</div>
   </div>
 
   <div class="gcard" style="gap:20px">
@@ -229,7 +240,7 @@ th{background:var(--card);color:var(--green);}
 
   <div id="hdr">
     <h1>BEYBLADE X</h1>
-    <div class="sub">ベイブレードエックス 賽事系統</div>
+    <div class="sub">賞金賽事系統</div>
   </div>
 
   <!-- 狀態列 -->
@@ -383,12 +394,7 @@ let history=[];              // 上一步 stack
 // GATE 邏輯
 // ══════════════════════════════════════════════
 // 裁判允許的 email 清單（可自行新增）
-const JUDGE_EMAILS = [
-    "yuan01224@gmail.com",
-    "yuchen04200827@gmail.com",
-    "裁判3號的信箱@gmail.com"
-]; 
-// 你可以依照這個格式，無限往下加
+const JUDGE_EMAILS = ['yuan01224@gmail.com'];
 const ROOM_ID = 'beyblade-main'; // 固定唯一房間
 
 // 初始化 Firebase（只做一次）
