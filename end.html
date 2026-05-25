@@ -181,7 +181,7 @@ th{background:var(--card);color:var(--green);}
   <div style="text-align:center">
     <div style="font-size:56px;margin-bottom:8px">⚡</div>
     <h1>BEYBLADE X</h1>
-    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v31.0</div>
+    <div class="sub" style="margin-top:5px">ベイブレードエックス 賽事系統 v53.0</div>
   </div>
 
   <div class="gcard" style="gap:20px">
@@ -383,7 +383,12 @@ let history=[];              // 上一步 stack
 // GATE 邏輯
 // ══════════════════════════════════════════════
 // 裁判允許的 email 清單（可自行新增）
-const JUDGE_EMAILS = ['yuan01224@gmail.com'];
+const JUDGE_EMAILS = [
+    "yuan01224@gmail.com",
+    "yuchen04200827@gmail.com",
+    "裁判3號的信箱@gmail.com"
+]; 
+// 你可以依照這個格式，無限往下加
 const ROOM_ID = 'beyblade-main'; // 固定唯一房間
 
 // 初始化 Firebase（只做一次）
@@ -692,8 +697,19 @@ function loadState(s){
     thirdNode={id:tm.id,s1:tm.s1??null,s2:tm.s2??null,isPlayed:tm.played||false,isThird:true,
       p1:rp(tm.p1),p2:rp(tm.p2),winner:rp(tm.win),loser:rp(tm.lose),nextNode:null,prevNodes:[]};
   }
-  if(mode==='single')root=matches.find(m=>!m.nextNode&&!m.isThird)||null;
-  activeMatch=s.amid?(matches.find(m=>m.id===s.amid)||thirdNode):null;
+  // 還原 thirdNode 和 root
+  thirdNode = matches.find(m => m.isThird) || null;
+  if(mode==='single') root = matches.find(m => !m.nextNode && !m.isThird) || null;
+  if(mode==='double') root = matches.find(m => m.id === 'm7') || null;
+
+  // 還原 activeMatch：先從 matches 找，再試 thirdNode
+  if(s.amid){
+    activeMatch = matches.find(m => m.id === s.amid) || null;
+    // 如果 amid 是季軍賽 id，從 thirdNode 找
+    if(!activeMatch && thirdNode && thirdNode.id === s.amid) activeMatch = thirdNode;
+  } else {
+    activeMatch = null;
+  }
 
   showArena();
   try{redraw();}catch(e){console.warn('redraw error',e);}
@@ -857,53 +873,73 @@ function evalBye(n){
   else if(n.p1.isBye&&n.p2.isBye){n.winner={name:'空位',isBye:true};n.isPlayed=true;}
 }
 function syncTree(){
-  matches.forEach(m=>{
-    if(m.isPlayed&&m.winner&&m.nextNode){
-      if(m.nextNode.prevNodes[0]===m)m.nextNode.p1=m.winner;
-      else if(m.nextNode.prevNodes[1]===m)m.nextNode.p2=m.winner;
-      evalBye(m.nextNode);
+  matches.forEach(m => {
+    if(m.isPlayed && m.winner && m.nextNode){
+      if(m.nextNode.prevNodes[0] === m) m.nextNode.p1 = m.winner;
+      else if(m.nextNode.prevNodes[1] === m) m.nextNode.p2 = m.winner;
+      // 輪空自動推進
+      if(m.nextNode.p1?.isBye && m.nextNode.p2 && !m.nextNode.isPlayed){
+        m.nextNode.winner = m.nextNode.p2; m.nextNode.loser = m.nextNode.p1; m.nextNode.isPlayed = true;
+      } else if(m.nextNode.p2?.isBye && m.nextNode.p1 && !m.nextNode.isPlayed){
+        m.nextNode.winner = m.nextNode.p1; m.nextNode.loser = m.nextNode.p2; m.nextNode.isPlayed = true;
+      }
     }
   });
-  if(thirdNode&&!thirdNode.isPlayed){
-    const fin=mode==='double'?matches[6]:root;
-    if(fin&&fin.prevNodes&&fin.prevNodes.length===2){
-      const lm=fin.prevNodes[0];
-      const rm=fin.prevNodes[1];
-      if(lm&&lm.isPlayed&&lm.loser)thirdNode.p1=lm.loser;
-      if(rm&&rm.isPlayed&&rm.loser)thirdNode.p2=rm.loser;
+  // 季軍賽：從決賽的前兩場找敗者
+  if(thirdNode && !thirdNode.isPlayed){
+    const fin = mode === 'double' ? (matches.find(m => m.id === 'm7') || matches[6]) : root;
+    if(fin && fin.prevNodes && fin.prevNodes.length === 2){
+      const lm = fin.prevNodes[0];
+      const rm = fin.prevNodes[1];
+      if(lm && lm.isPlayed && lm.loser && !lm.loser.isBye) thirdNode.p1 = lm.loser;
+      if(rm && rm.isPlayed && rm.loser && !rm.loser.isBye) thirdNode.p2 = rm.loser;
     }
   }
 }
 
-// ── 找下一場 ──
+
 function nextMatch(){
-  syncTree();redraw();
-  let found=null;
-  // 先找一般場次
-  found=matches.find(m=>!m.isThird&&!m.isPlayed&&m.p1&&m.p2&&!m.p1.isBye&&!m.p2.isBye);
-  // 沒有一般場次才找季軍賽
-  if(!found&&thirdNode&&!thirdNode.isPlayed&&thirdNode.p1&&thirdNode.p2&&!thirdNode.p1.isBye&&!thirdNode.p2.isBye){
-    found=thirdNode;
+  syncTree(); redraw();
+
+  // 🔥 強制卡控順序：四強 → 季軍賽 → 決賽
+  let found = null;
+
+  // 有 nextNode 的場次 = 四強，優先打
+  found = matches.find(m => !m.isThird && !m.isPlayed && m.p1 && m.p2 && !m.p1.isBye && !m.p2.isBye && m.nextNode);
+
+  // 四強打完 → 季軍賽
+  if(!found && thirdNode && !thirdNode.isPlayed && thirdNode.p1 && thirdNode.p2 && !thirdNode.p1.isBye && !thirdNode.p2.isBye){
+    found = thirdNode;
   }
+
+  // 季軍賽打完 → 決賽（沒有 nextNode）
+  if(!found){
+    found = matches.find(m => !m.isThird && !m.isPlayed && m.p1 && m.p2 && !m.p1.isBye && !m.p2.isBye);
+  }
+
+  activeMatch = found || null;
+
   if(found){
-    activeMatch=found;
     document.getElementById('fpanel').classList.remove('hidden');
     document.getElementById('scorezone').classList.remove('hidden');
     document.getElementById('finzone').classList.add('hidden');
-    document.getElementById('flabel').textContent=found.isThird?'【季軍爭奪賽】':'【當前對戰】';
-    document.getElementById('fp1').textContent=found.p1?found.p1.name:'-';
-    document.getElementById('fp2').textContent=found.p2?found.p2.name:'-';
-    document.getElementById('fs1').value=0;document.getElementById('fs2').value=0;
-    const b=document.getElementById('b-'+found.id);
-    if(b)setTimeout(()=>{b.classList.add('active');b.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});},50);
-  }else{
+    document.getElementById('lbsec').classList.add('hidden');
+    document.getElementById('flabel').textContent = found.isThird ? '【季軍爭奪賽】' : '【當前對戰】';
+    document.getElementById('fp1').textContent = found.p1 ? found.p1.name : '-';
+    document.getElementById('fp2').textContent = found.p2 ? found.p2.name : '-';
+    document.getElementById('fs1').value = 0;
+    document.getElementById('fs2').value = 0;
+    const b = document.getElementById('b-' + found.id);
+    if(b) setTimeout(() => { b.classList.add('active'); b.scrollIntoView({behavior:'smooth', block:'center', inline:'center'}); }, 50);
+  } else {
     finishGame();
-    if(mode==='double')fillPodium();
+    if(mode === 'double') fillPodium();
     updateLB();
-    setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),100);
+    setTimeout(() => window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'}), 100);
   }
   push();
 }
+
 
 function finishGame(){
   document.getElementById('scorezone').classList.add('hidden');
@@ -915,12 +951,18 @@ function finishGame(){
 function submitScore(){
   if(!isJudge)return;
   if(mode==='rr'){submitRR();return;}
-  // 如果 activeMatch 是 null，嘗試從季軍賽找
+  // activeMatch 為 null 時自動找當前場次
   if(!activeMatch){
-    if(thirdNode&&!thirdNode.isPlayed&&thirdNode.p1&&thirdNode.p2){
+    // 先找季軍賽
+    if(thirdNode&&!thirdNode.isPlayed&&thirdNode.p1&&thirdNode.p2&&!thirdNode.p1.isBye&&!thirdNode.p2.isBye){
       activeMatch=thirdNode;
-    }else{
-      return alert('請先點選要計分的場次！');
+    } else {
+      // 找有 nextNode 的場次（四強）
+      let m=matches.find(x=>!x.isThird&&!x.isPlayed&&x.p1&&x.p2&&!x.p1.isBye&&!x.p2.isBye&&x.nextNode);
+      // 找不到就找決賽
+      if(!m)m=matches.find(x=>!x.isThird&&!x.isPlayed&&x.p1&&x.p2&&!x.p1.isBye&&!x.p2.isBye);
+      if(m)activeMatch=m;
+      else return alert('沒有可計分的場次！');
     }
   }
   const s1=parseInt(document.getElementById('fs1').value);
@@ -938,26 +980,28 @@ function submitScore(){
 // ── 渲染 match box ──
 function renderMB(node,w='220px',center=false){
   if(!node)return'';
+  const p1n=node.p1?node.p1.name:'等待晉級...';
+  const p2n=node.p2?node.p2.name:'等待晉級...';
   const s1b=node.seed1?`<div class="seed ${node.p1&&!node.p1.isBye?'':'empty'}">${node.seed1}</div>`:'';
   const s2b=node.seed2?`<div class="seed ${node.p2&&!node.p2.isBye?'':'empty'}">${node.seed2}</div>`:'';
   const w1=node.winner&&node.p1&&node.winner.name===node.p1.name;
   const w2=node.winner&&node.p2&&node.winner.name===node.p2.name;
-  // 裁判可點擊任意場次（已完成的也可重新選）
   const clickable=isJudge&&node.p1&&node.p2&&!node.p1.isBye&&!node.p2.isBye;
-  const clickAttr=clickable?`onclick="selectMatch('${node.id}')" style="width:${w};cursor:pointer"`:`style="width:${w}"`;
-  return`<div id="b-${node.id}" class="mb" ${clickAttr}>
+  const label=node.isThird?'<div style="font-size:10px;font-weight:900;color:var(--orange);text-align:center;padding:2px 0;background:#1e293b">3RD PLACE</div>':'';
+  return`<div id="b-${node.id}" class="mb" ${clickable?`onclick="selectMatch('${node.id}')" style="width:${w};cursor:pointer"`:`style="width:${w}"`}>
+    ${label}
     <div class="pr ${w1?'win':''} ${node.p1?.isBye?'bye':''}">
-      ${s1b}<div class="pname" style="${center?'text-align:center':''}">${node.p1?node.p1.name:'等待晉級...'}</div>
-      <div class="pscore">${node.s1!==null?node.s1:''}</div>
+      ${s1b}<div class="pname" style="${center?'text-align:center':''}">${p1n}</div>
+      <div class="pscore">${node.s1!==null&&node.s1!==undefined?node.s1:''}</div>
     </div>
     <div class="pr ${w2?'win':''} ${node.p2?.isBye?'bye':''}">
-      ${s2b}<div class="pname" style="${center?'text-align:center':''}">${node.p2?node.p2.name:'等待晉級...'}</div>
-      <div class="pscore">${node.s2!==null?node.s2:''}</div>
+      ${s2b}<div class="pname" style="${center?'text-align:center':''}">${p2n}</div>
+      <div class="pscore">${node.s2!==null&&node.s2!==undefined?node.s2:''}</div>
     </div>
   </div>`;
 }
 
-// 裁判點擊場次 → 切換到該場
+
 function selectMatch(id){
   if(!isJudge)return;
   const node=matches.find(m=>m.id===id)||(thirdNode&&thirdNode.id===id?thirdNode:null);
@@ -986,11 +1030,40 @@ function redraw(){
     document.getElementById('b-m7').innerHTML=renderMB(matches[6],'220px',true);
     document.getElementById('b-m8').innerHTML=renderMB(matches[7],'220px',false);
   }else if(mode==='single'){
-    let html=buildTree(root);
-    if(thirdNode)html+=`<div class="s3rd"><div style="font-size:12px;font-weight:900;color:#475569;margin-bottom:5px">3RD PLACE</div>${renderMB(thirdNode)}</div>`;
-    document.getElementById('scanvas').innerHTML=html;
+    // 季軍賽整合進樹：放在決賽上方
+    const finHtml = buildTreeWithThird(root);
+    document.getElementById('scanvas').innerHTML = finHtml;
   }
 }
+
+// 帶季軍賽的樹：季軍賽在上，決賽在下，整合進同一棵樹
+function buildTreeWithThird(rootNode){
+  if(!rootNode) return '';
+
+  // 右側：季軍賽（上）+ 決賽（下）垂直排列
+  const rightSide = `<div style="display:flex;flex-direction:column;gap:16px;align-items:flex-start">
+    ${thirdNode ? `<div>
+      <div style="font-size:11px;font-weight:900;color:var(--orange);margin-bottom:4px;letter-spacing:1px">🥉 3RD PLACE</div>
+      ${renderMB(thirdNode,'220px',true)}
+    </div>` : ''}
+    <div>
+      <div style="font-size:11px;font-weight:900;color:#475569;margin-bottom:4px;letter-spacing:1px">🏆 FINAL</div>
+      ${renderMB(rootNode,'220px',true)}
+    </div>
+  </div>`;
+
+  if(!rootNode.prevNodes || !rootNode.prevNodes.length) return rightSide;
+
+  // 左側：四強子樹
+  return `<div class="tnode">
+    <div class="tchildren">
+      <div class="tchild">${buildTree(rootNode.prevNodes[0])}</div>
+      <div class="tchild">${buildTree(rootNode.prevNodes[1])}</div>
+    </div>
+    <div class="tnode tparent">${rightSide}</div>
+  </div>`;
+}
+
 
 function buildTree(n){
   if(!n)return'';
